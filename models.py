@@ -21,6 +21,8 @@ Usage:
 # Pricing: per 1M tokens (serverless tier), USD.
 # slug_confirmed: True = verified via API or official docs; False = inferred from HF ID, verify via /v1/models
 
+PARASAIL_BASE_URL = "https://api.parasail.io/v1"
+
 MODELS = {
     # ── GPT-OSS (OpenAI open-weight, hosted by Parasail) ─────────────────────
     "gpt-oss-20b": {

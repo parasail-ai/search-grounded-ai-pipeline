@@ -29,20 +29,20 @@ from logger_setup import configure, get_logger
 configure(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = get_logger(__name__)
 
-from agents.parasail_agent import ParasailAgent
 import inspect
+from agents.parasail_agent import ParasailAgent
 from agents.pipeline_agent import enrich, brief_stream, email_stream, _llm_stream
 from search_tool import SYSTEM_PROMPT, execute_search
-from agents.parasail_agent import ParasailAgent
 from models import list_models_from_api, MODELS
 from costs import calculate_costs, format_cost, YDC_SEARCH_COST_PER_CALL
-from models import MODELS
 
 RETRY_DELAY_S = 5          # seconds to wait before one 429 retry
 RETRY_STATUS_CODES = {429}
+MAX_REQUEST_BODY = 512_000  # 512 KB — sufficient for any question/brief payload
 
 APP_DIR = Path(__file__).parent
 PORT = 8091
+EXPOSE_SOURCE = os.getenv("EXPOSE_SOURCE", "false").lower() == "true"
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -67,6 +67,9 @@ class Handler(SimpleHTTPRequestHandler):
                 "system_prompt":         SYSTEM_PROMPT,
             })
         elif self.path == "/api/source":
+            if not EXPOSE_SOURCE:
+                self._json({"error": "source endpoint disabled"}, 403)
+                return
             self._json({
                 "enrich":              inspect.getsource(enrich),
                 "brief_stream":        inspect.getsource(brief_stream),
@@ -96,10 +99,24 @@ class Handler(SimpleHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    def _read_body(self):
+        """Read and parse the POST body. Returns parsed dict or None on error (sends 400)."""
+        try:
+            length = min(int(self.headers.get("Content-Length", 0)), MAX_REQUEST_BODY)
+        except ValueError:
+            self._json({"error": "invalid Content-Length"}, 400)
+            return None
+        try:
+            return json.loads(self.rfile.read(length))
+        except (json.JSONDecodeError, ValueError):
+            self._json({"error": "invalid request body"}, 400)
+            return None
+
     def do_POST(self):
         if self.path == "/api/ask":
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length))
+            body = self._read_body()
+            if body is None:
+                return
             model_key = body.get("model", "gpt-oss-20b")
             question = body.get("question", "").strip()
             if not question:
@@ -109,8 +126,9 @@ class Handler(SimpleHTTPRequestHandler):
             logger.info("ask  model=%s search=%s q=%r", model_key, search_enabled, question[:80])
             self._sse_ask(model_key, question, search_enabled=search_enabled)
         elif self.path == "/api/chat":
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length))
+            body = self._read_body()
+            if body is None:
+                return
             model_key = body.get("model", "gpt-oss-20b")
             question = body.get("question", "").strip()
             prior_messages = body.get("prior_messages", [])
@@ -121,8 +139,9 @@ class Handler(SimpleHTTPRequestHandler):
             logger.info("chat model=%s search=%s turns=%d q=%r", model_key, search_enabled, len(prior_messages)//2, question[:80])
             self._sse_ask(model_key, question, prior_messages=prior_messages, search_enabled=search_enabled)
         elif self.path == "/api/pipeline/enrich":
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length))
+            body = self._read_body()
+            if body is None:
+                return
             company = body.get("company", "").strip()
             if not company:
                 self._json({"error": "company required"}, 400)
@@ -136,8 +155,9 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(result)
 
         elif self.path == "/api/pipeline/brief":
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length))
+            body = self._read_body()
+            if body is None:
+                return
             company = body.get("company", "").strip()
             hits    = body.get("hits", [])
             model_key = body.get("model", "")
@@ -147,8 +167,9 @@ class Handler(SimpleHTTPRequestHandler):
             self._sse_llm_stream(brief_stream(company, hits, model_id), pricing=model_cfg.get("pricing"))
 
         elif self.path == "/api/pipeline/email":
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length))
+            body = self._read_body()
+            if body is None:
+                return
             company = body.get("company", "").strip()
             brief   = body.get("brief", "")
             model_key = body.get("model", "")

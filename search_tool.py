@@ -42,18 +42,6 @@ MAX_LIVECRAWL_CHARS = 3000  # Per-result truncation to avoid blowing up context
 INTEGRATION_INTERFACE = "direct_api"
 
 
-def set_interface(interface: str) -> None:
-    """Set the integration interface label for tool call logs.
-
-    Call this once at startup. Valid values:
-        direct_api    — raw HTTP to ydc-index.io/v1/search (default)
-        mcp           — via You.com MCP server
-        langchain     — via langchain-youdotcom
-        agent_skill   — via .md agent skill file
-    """
-    global INTEGRATION_INTERFACE
-    INTEGRATION_INTERFACE = interface
-
 
 def is_verbose() -> bool:
     """Check if verbose logging is enabled.
@@ -104,12 +92,6 @@ MAX_TOKENS = 4096       # Default max output tokens per LLM call
 MAX_TOOL_ROUNDS = 15    # Max LLM ↔ tool-use round-trips before we force a final answer
 
 # Estimated baseline input tokens (system prompt + user query) for single-call native
-# search paths where the model handles search internally and returns one response.
-# Multi-round paths (YDC, chat.completions) measure this exactly from round 0.
-# Single-call paths (Anthropic native, OpenAI Responses native) cannot measure it
-# because there is no pre-search round — this constant is used as the approximation.
-NATIVE_SEARCH_BASELINE_TOKENS = 300
-
 
 def get_system_prompt(model: str = "") -> str:
     """Return the system prompt with the current date/time appended.
@@ -202,23 +184,6 @@ TOOL_SCHEMA = {
             "required": ["query"],
         },
     },
-}
-
-# OpenAI Responses API tool format — no outer "function" wrapper.
-# Tool is named "you_search" (not "web_search") so DashScope/Qwen does not intercept
-# it and route to native search instead of calling our function.
-TOOL_SCHEMA_RESPONSES = {
-    "type": "function",
-    "name": "you_search",
-    "description": TOOL_SCHEMA["function"]["description"],
-    "parameters": TOOL_SCHEMA["function"]["parameters"],
-}
-
-# Claude uses a different tool format. This is the converted version.
-TOOL_SCHEMA_ANTHROPIC = {
-    "name": "web_search",
-    "description": TOOL_SCHEMA["function"]["description"],
-    "input_schema": TOOL_SCHEMA["function"]["parameters"],
 }
 
 
@@ -432,53 +397,6 @@ def execute_search(
     return header + "\n\n" + "\n\n---\n\n".join(parts)
 
 
-# ─── Citation injection helpers ──────────────────────────────────────────────
-# Used by native search methods on agent classes to embed [N] markers in answers.
-# Shared here so agent files don't depend on compare.py.
-
-def inject_citations_at_positions(text: str, insertions: dict) -> str:
-    """Insert [N] citation markers into text at the given char end-positions.
-
-    insertions: dict mapping char index → list of citation numbers to insert.
-    Providers that return character-offset annotations (Anthropic, OpenAI) use this
-    to embed inline citations before returning the answer to callers.
-    """
-    if not insertions:
-        return text
-    result_chars = []
-    for i, ch in enumerate(text):
-        result_chars.append(ch)
-        if i + 1 in insertions:
-            nums = sorted(insertions[i + 1])
-            result_chars.append("".join(f"[{n}]" for n in nums))
-    return "".join(result_chars)
-
-
-def inject_citations(text: str, sources: list) -> str:
-    """Replace [N] citation markers with markdown links to source URLs."""
-    import re
-    for i, url in enumerate(sources, 1):
-        text = re.sub(rf'\[{i}\]', f'[[{i}]]({url})', text)
-    return text
-
-
-def make_progress_reporter(prefix: str, on_progress=None):
-    """Return a _notify(msg) closure for agent native-search progress reporting."""
-    verbose = is_verbose()
-    def _notify(msg):
-        if verbose:
-            print(f"  [{prefix}] {msg}")
-        if on_progress:
-            on_progress(msg)
-    return _notify
-
-
-def make_elapsed_timer():
-    """Return (t0, _elapsed) where _elapsed() formats seconds since t0 as a string."""
-    t0 = time.perf_counter()
-    def _elapsed():
-        return f"{(time.perf_counter() - t0):.1f}s"
-    return t0, _elapsed
 
 
 # ─── Quick self-test ─────────────────────────────────────────────────────────

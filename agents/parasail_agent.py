@@ -38,8 +38,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openai import OpenAI
 
 from base_agent import OpenAICompatibleAgent, _empty_stats
+from models import PARASAIL_BASE_URL
 
-_PARASAIL_BASE_URL = "https://api.parasail.io/v1"
 
 
 class ParasailAgent(OpenAICompatibleAgent):
@@ -67,7 +67,7 @@ class ParasailAgent(OpenAICompatibleAgent):
             )
         client = OpenAI(
             api_key=resolved_key,
-            base_url=_PARASAIL_BASE_URL,
+            base_url=PARASAIL_BASE_URL,
             timeout=120.0,
         )
         super().__init__(client=client, model=model)

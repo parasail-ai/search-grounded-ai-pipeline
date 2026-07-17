@@ -14,13 +14,17 @@ import os
 import re
 import time
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import requests
 from openai import OpenAI
+from models import PARASAIL_BASE_URL
 
 logger = logging.getLogger(__name__)
 
-_PARASAIL_BASE_URL = "https://api.parasail.io/v1"
-_YDC_SEARCH_URL    = "https://ydc-index.io/v1/search"
+_YDC_SEARCH_URL = "https://ydc-index.io/v1/search"
 _SEARCH_TIMEOUT    = 20
 
 
@@ -28,7 +32,7 @@ def _parasail_client() -> OpenAI:
     key = os.environ.get("PARASAIL_API_KEY", "")
     if not key:
         raise ValueError("PARASAIL_API_KEY not set")
-    return OpenAI(api_key=key, base_url=_PARASAIL_BASE_URL, timeout=60.0)
+    return OpenAI(api_key=key, base_url=PARASAIL_BASE_URL, timeout=60.0)
 
 
 # ── Stage 1: Enrich ───────────────────────────────────────────────────────────
@@ -125,7 +129,7 @@ def enrich(company: str, ydc_key: str, num_results: int = 5, livecrawl: bool = F
 
     except Exception as e:
         logger.error("enrich failed company=%r: %s", company, e)
-        return {"company": company, "hits": [], "latency_ms": 0, "error": str(e)}
+        return {"company": company, "hits": [], "latency_ms": 0, "livecrawl": livecrawl, "num_results": num_results, "error": str(e)}
 
 
 # ── Stage 2: Brief ────────────────────────────────────────────────────────────
@@ -151,12 +155,11 @@ _BRIEF_SYSTEM = (
 _CHUNK_SIZE = 8  # characters per synthetic SSE chunk when replaying non-streaming response
 
 def _llm_stream(system: str, user: str, model: str, label: str, start_marker: str = None):
-    # Uses stream=False: Parasail's reasoning models put output in model_extra['reasoning'],
-    # not delta.content, so streaming chunks are unreliable. We collect the full response
-    # then re-emit in 8-char chunks to preserve the streaming UX in the browser.
-    """
-    Calls the LLM without streaming (works with reasoning models), then re-streams
-    the response to the client in small chunks.
+    """Call the LLM without streaming, then re-emit in small chunks for the browser UX.
+
+    Uses stream=False because Parasail's reasoning models put output in
+    model_extra['reasoning'], not delta.content — streaming chunks are unreliable.
+
     start_marker: if set, everything before the first occurrence is stripped
                   (handles reasoning models that narrate before producing output).
     Yields: {"event": "token", "text": str} … then {"event": "done", …}

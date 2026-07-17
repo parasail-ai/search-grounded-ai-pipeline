@@ -1130,7 +1130,7 @@
       <select id="chat-model-select">
         <option value="">Loading models…</option>
       </select>
-      <div class="lc-toggle" onclick="_toggleSearch(this,'chat-search-track','chat-search-label','chat-send-btn')" title="Toggle You.com Web Search">
+      <div class="lc-toggle" onclick="_toggleSearch(this,'chat-search-track','chat-search-label','chat-send-btn','Send →','Send →')" title="Toggle You.com Web Search">
         <div class="lc-track on" id="chat-search-track"><div class="lc-thumb"></div></div>
         <span id="chat-search-label" style="font-size:11.5px;font-weight:600;color:var(--primary)">You.com Web Search</span>
       </div>
@@ -1686,7 +1686,7 @@ function renderConfig(cfg) {
     </table>
 
     <div class="config-section-label">System Prompt</div>
-    <div class="config-prompt">${cfg.system_prompt}</div>
+    <div class="config-prompt">${_esc(cfg.system_prompt)}</div>
     <p style="font-size:12px;color:var(--muted);margin-top:8px">
       Defined in <code>search_tool.py → SYSTEM_PROMPT</code>. Identical to core grounding repo.
       Modify to change retrieval behavior, citation style, or search aggressiveness.
@@ -1747,24 +1747,34 @@ function ask() {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';
-    function pump() {
-      reader.read().then(({done, value}) => {
-        if (done) { finalize(); return; }
-        buf += decoder.decode(value, {stream: true});
-        const lines = buf.split('\n\n');
-        buf = lines.pop();
-        lines.forEach(line => {
-          if (line.startsWith('data: ')) {
-            try { handleEvent(JSON.parse(line.slice(6))); } catch(e) {}
+    async function pump() {
+      try {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, {stream: true});
+          const parts = buf.split('\n\n');
+          buf = parts.pop();
+          for (const part of parts) {
+            if (!part.startsWith('data:')) continue;
+            try { handleEvent(JSON.parse(part.slice(5).trim())); } catch(e) {}
           }
-        });
-        pump();
-      }).catch(e => { if (e.name !== 'AbortError') throw e; });
+        }
+      } catch(e) {
+        if (e.name !== 'AbortError') {
+          results.insertAdjacentHTML('beforeend',
+            `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+              <span style="font-size:15px">✕</span>${_esc(e.message)}
+            </div>`);
+        }
+      } finally {
+        finalize();
+      }
     }
     pump();
   }).catch(e => {
     if (e.name !== 'AbortError') {
-      results.innerHTML = `<div class="placeholder"><h3>Error</h3>${e.message}</div>`;
+      results.innerHTML = `<div class="placeholder"><h3>Error</h3>${_esc(e.message)}</div>`;
     }
     finalize();
   });
@@ -1772,7 +1782,9 @@ function ask() {
 
 // ── Markdown renderer ──────────────────────────────────────────────────────
 function renderMarkdown(text) {
-  const inline = s => s
+  // Escape raw input first so LLM-generated HTML cannot execute.
+  // Markdown patterns are then applied to the safe escaped string.
+  const inline = s => _esc(s)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>')
@@ -1818,13 +1830,13 @@ function renderMarkdown(text) {
 }
 
 // ── Search toggle ──────────────────────────────────────────────────────────
-function _toggleSearch(el, trackId, labelId, btnId) {
+function _toggleSearch(el, trackId, labelId, btnId, onLabel, offLabel) {
   const track = document.getElementById(trackId);
   const label = document.getElementById(labelId);
   const btn   = document.getElementById(btnId);
   const on = track.classList.toggle('on');
   label.style.color = on ? 'var(--primary)' : 'var(--muted)';
-  if (btn) btn.textContent = on ? 'Search →' : 'Ask →';
+  if (btn) btn.textContent = on ? (onLabel || 'Search →') : (offLabel || 'Ask →');
 }
 
 // ── Section toggle ─────────────────────────────────────────────────────────
@@ -1960,13 +1972,16 @@ function handleEvent(ev) {
     if (statSearches) { statSearches.textContent = searchCount; statSearches.classList.remove('loading'); }
 
     const params = ev.params || {};
-    const meta = Object.entries(params).filter(([k,v]) => v).map(([k,v]) => `${k}=${v}`).join(' · ') || 'snippets';
+    const meta = _esc(Object.entries(params).filter(([k,v]) => v).map(([k,v]) => `${k}=${v}`).join(' · ') || 'snippets');
+    const queryHtml = ev.query
+      ? `"${_esc(ev.query)}"`
+      : `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-weight:400;font-size:12px">${_esc((params.url||'').replace(/^https?:\/\//,'').substring(0,60))}${(params.url||'').length>67?'…':''}</span>`;
     traceEl.insertAdjacentHTML('beforeend', `
       <div class="trace-item search">
         <span class="trace-icon">🔍</span>
         <div class="trace-content">
-          <div class="trace-query">${ev.query ? `"${ev.query}"` : `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-weight:400;font-size:12px">${(params.url||'').replace(/^https?:\/\//,'').substring(0,60)}${(params.url||'').length>67?'…':''}</span>`}</div>
-          <div class="trace-meta">Search ${ev.search_num} · round ${ev.round} · ${meta}</div>
+          <div class="trace-query">${queryHtml}</div>
+          <div class="trace-meta">Search ${_esc(ev.search_num)} · round ${_esc(ev.round)} · ${meta}</div>
         </div>
       </div>
     `);
@@ -2019,7 +2034,7 @@ function handleEvent(ev) {
       sourcesEl.innerHTML = ev.sources.map((url, i) => `
         <div class="source-item">
           <span class="source-num">[${i+1}]</span>
-          <a class="source-url" href="${url}" target="_blank" rel="noopener">${url}</a>
+          <a class="source-url" href="${_escUrl(url)}" target="_blank" rel="noopener noreferrer">${_esc(url)}</a>
         </div>
       `).join('');
     }
@@ -2092,7 +2107,7 @@ function handleEvent(ev) {
     results.insertAdjacentHTML('beforeend',
       `<div class="retrying-notice" id="retrying-notice">
         <span class="spinner" style="border-top-color:var(--orange)"></span>
-        ${ev.message}
+        ${_esc(ev.message)}
       </div>`
     );
   }
@@ -2102,7 +2117,7 @@ function handleEvent(ev) {
     results.insertAdjacentHTML('beforeend',
       `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
         <span style="font-size:15px">✕</span>
-        ${ev.message}
+        ${_esc(ev.message)}
       </div>`
     );
   }
@@ -2353,7 +2368,7 @@ function updateChatStats(stats, costs, model, pricing) {
 
 function chatNew() {
   _chatHistory = [];
-  _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0 };
+  _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0, llm: 0, search: 0, livecrawl: 0 };
   document.getElementById('chat-stats-bar').style.display = 'none';
   document.getElementById('chat-hero').style.display = '';
   const thread = document.getElementById('chat-thread');
@@ -2466,14 +2481,14 @@ async function chatSend() {
           searchCount++;
           const isLivecrawl = !ev.query && ev.params?.url;
           const label = isLivecrawl
-            ? `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-size:11px">${(ev.params.url||'').replace(/^https?:\/\//,'').substring(0,55)}…</span>`
-            : `"${ev.query}"`;
-          const paramStr = Object.entries(ev.params||{}).filter(([k,v])=>v&&k!=='url').map(([k,v])=>`${k}=${v}`).join(' · ');
+            ? `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-size:11px">${_esc((ev.params.url||'').replace(/^https?:\/\//,'').substring(0,55))}…</span>`
+            : `"${_esc(ev.query)}"`;
+          const paramStr = _esc(Object.entries(ev.params||{}).filter(([k,v])=>v&&k!=='url').map(([k,v])=>`${k}=${v}`).join(' · '));
           searchesBody.insertAdjacentHTML('beforeend', `
             <div class="trace-item search" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
               <span class="trace-icon">🔍</span>
               <div class="trace-content"><div class="trace-query">${label}</div>
-              <div class="trace-meta">Search ${ev.search_num} · round ${ev.round}${paramStr ? ' · ' + paramStr : ''}</div></div>
+              <div class="trace-meta">Search ${_esc(ev.search_num)} · round ${_esc(ev.round)}${paramStr ? ' · ' + paramStr : ''}</div></div>
             </div>`);
           if (statusEl) { statusEl.textContent = `Searching… (${searchCount})`; }
         }
@@ -2496,7 +2511,7 @@ async function chatSend() {
 
         else if (ev.event === 'retrying') {
           if (statusEl) statusEl.textContent = ev.message;
-          bubble.innerHTML = `<div class="retrying-notice"><span class="spinner" style="border-top-color:var(--orange)"></span>${ev.message}</div>`;
+          bubble.innerHTML = `<div class="retrying-notice"><span class="spinner" style="border-top-color:var(--orange)"></span>${_esc(ev.message)}</div>`;
         }
 
         else if (ev.event === 'error') {
@@ -2504,7 +2519,7 @@ async function chatSend() {
           const is429 = ev.message.includes('busy') || ev.message.includes('overloaded');
           bubble.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
             <span style="font-size:15px">✕</span>
-            ${ev.message}
+            ${_esc(ev.message)}
           </div>`;
           if (statusEl) statusEl.textContent = is429 ? 'Unavailable' : 'Error';
         }
@@ -2689,9 +2704,9 @@ async function _enrichCompany(company) {
       ? `<div style="color:var(--muted);font-size:13px">No results found.</div>`
       : hits.map(h => `
           <div class="intel-hit">
-            <div class="intel-hit-title"><a href="${h.url}" target="_blank" rel="noopener">${h.title}</a></div>
-            <div class="intel-hit-desc">${h.description}</div>
-            <div class="intel-hit-meta">${(() => { try { return new URL(h.url).hostname; } catch(e) { return ''; } })()}${h.page_age ? ' · ' + h.page_age : ''}</div>
+            <div class="intel-hit-title"><a href="${_escUrl(h.url)}" target="_blank" rel="noopener noreferrer">${_esc(h.title)}</a></div>
+            <div class="intel-hit-desc">${_esc(h.description)}</div>
+            <div class="intel-hit-meta">${_esc((() => { try { return new URL(h.url).hostname; } catch(e) { return ''; } })())}${h.page_age ? ' · ' + _esc(h.page_age) : ''}</div>
           </div>`).join('');
 
     body.innerHTML = `
@@ -2705,7 +2720,7 @@ async function _enrichCompany(company) {
           <div class="lc-track" id="lctrack-${slug}"><div class="lc-thumb"></div></div>
           <span id="lclabel-${slug}" style="color:var(--muted);font-size:11.5px">Off</span>
         </div>
-        <button class="rerun-btn" id="rerunbtn-${slug}" onclick="_rerunEnrich('${company}','${slug}')">↻ Re-run</button>
+        <button class="rerun-btn" id="rerunbtn-${slug}" data-company="${_esc(company)}" data-slug="${_esc(slug)}" onclick="_rerunEnrich(this.dataset.company,this.dataset.slug)">↻ Re-run</button>
       </div>
       <div id="phits-${slug}">${hitsHtml}</div>`;
 
@@ -2724,7 +2739,7 @@ async function _enrichCompany(company) {
     card.insertAdjacentHTML('beforeend', `
       <div class="pipe-action-bar" id="paction1-${slug}">
         <span style="font-size:13px;color:var(--muted)">Review the sources above, then surface Parasail sales signals.</span>
-        <button class="pipe-action-btn" onclick="generateBrief('${company}','${slug}')">
+        <button class="pipe-action-btn" data-company="${_esc(company)}" data-slug="${_esc(slug)}" onclick="generateBrief(this.dataset.company,this.dataset.slug)">
           Surface Sales Signals →
         </button>
       </div>
@@ -2813,7 +2828,7 @@ async function generateBrief(company, slug) {
   card.insertAdjacentHTML('beforeend', `
     <div class="pipe-action-bar" id="paction2-${slug}">
       <span style="font-size:13px;color:var(--muted)">Edit signals if needed, then draft the Parasail pitch.</span>
-      <button class="pipe-action-btn" onclick="generateEmail('${company}','${slug}')">
+      <button class="pipe-action-btn" data-company="${_esc(company)}" data-slug="${_esc(slug)}" onclick="generateEmail(this.dataset.company,this.dataset.slug)">
         Draft Pitch Email →
       </button>
     </div>
@@ -2909,8 +2924,8 @@ function _renderEmail(raw) {
   const subject  = subMatch ? subMatch[1].trim() : '';
   const body     = raw.replace(/^Subject:.*$/im, '').replace(/^\n+/, '');
   return `
-    ${subject ? `<div class="email-subject">Subject: ${subject}</div>` : ''}
-    <div class="email-body">${body}</div>
+    ${subject ? `<div class="email-subject">Subject: ${_esc(subject)}</div>` : ''}
+    <div class="email-body">${_esc(body)}</div>
   `;
 }
 
@@ -2975,9 +2990,9 @@ async function _rerunEnrich(company, slug) {
       ? `<div style="color:var(--muted);font-size:13px">No results found.</div>`
       : hits.map(h => `
           <div class="intel-hit">
-            <div class="intel-hit-title"><a href="${h.url}" target="_blank" rel="noopener">${h.title}</a></div>
-            <div class="intel-hit-desc">${h.description}</div>
-            <div class="intel-hit-meta">${(() => { try { return new URL(h.url).hostname; } catch(e) { return ''; } })()}${h.page_age ? ' · ' + h.page_age : ''}</div>
+            <div class="intel-hit-title"><a href="${_escUrl(h.url)}" target="_blank" rel="noopener noreferrer">${_esc(h.title)}</a></div>
+            <div class="intel-hit-desc">${_esc(h.description)}</div>
+            <div class="intel-hit-meta">${_esc((() => { try { return new URL(h.url).hostname; } catch(e) { return ''; } })())}${h.page_age ? ' · ' + _esc(h.page_age) : ''}</div>
           </div>`).join('');
 
     if (hitsWrap) hitsWrap.innerHTML = hitsHtml;
@@ -3173,7 +3188,7 @@ const STEP_INFO = {
       text: '{company} news funding product launch hiring 2026 recent last 4 weeks as of {today}',
     },
     code: `def enrich(company: str, ydc_key: str) -> dict:
-    query = f"{company} news funding product launch hiring 2025"
+    query = f"{company} news funding product launch hiring 2026"
     t0 = time.time()
 
     resp = requests.get(
@@ -3522,8 +3537,12 @@ function switchDrawerTab(name, btnEl) {
   });
 }
 
-function _esc(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function _esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function _escUrl(url) {
+  const s = String(url ?? '');
+  return /^https?:\/\//i.test(s) ? _esc(s) : '#';
 }
 
 function _syntaxHL(code) {
