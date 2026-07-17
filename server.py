@@ -42,7 +42,7 @@ MAX_REQUEST_BODY = 512_000  # 512 KB — sufficient for any question/brief paylo
 
 APP_DIR = Path(__file__).parent
 PORT = 8091
-EXPOSE_SOURCE = os.getenv("EXPOSE_SOURCE", "false").lower() == "true"
+EXPOSE_SOURCE = os.getenv("EXPOSE_SOURCE", "true").lower() == "true"
 
 
 class Handler(SimpleHTTPRequestHandler):

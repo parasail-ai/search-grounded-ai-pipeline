@@ -118,6 +118,20 @@
   .input-bar button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
   #stop-btn { background: var(--red); box-shadow: none; }
   #stop-btn:hover { background: #b91c1c; }
+  .ask-progress {
+    height: 2px; background: var(--border-lt); overflow: hidden;
+    display: none;
+  }
+  .ask-progress.active { display: block; }
+  .ask-progress-bar {
+    height: 100%; width: 40%; background: var(--primary);
+    border-radius: 1px;
+    animation: ask-slide 1.4s ease-in-out infinite;
+  }
+  @keyframes ask-slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+  }
 
   /* ─── Results area ───────────────────────────────────────────────── */
   .results { padding: 28px 0; max-width: 860px; margin: 0 auto; padding: 28px 24px; }
@@ -904,15 +918,15 @@
   :root[data-theme="dark"] .drawer-finding { background: #1c1400; border-color: #713f12; color: #fbbf24; }
   :root[data-theme="light"] .drawer-finding { background: #fffbeb; border-color: #fde68a; color: #92400e; }
   .code-block-wrap { position: relative; margin-bottom: 16px; }
-  .code-block-wrap .code-block { margin-bottom: 0; }
+  .code-block-wrap .code-block { margin-bottom: 0; padding-top: 32px; }
   .code-copy-btn {
-    position: absolute; top: 8px; right: 8px;
-    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
-    color: #c4b5fd; border-radius: 6px; padding: 3px 8px;
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.2);
+    color: #c4b5fd; border-radius: 6px; padding: 3px 10px;
     font-size: 11px; cursor: pointer; font-family: inherit;
     transition: background 0.15s;
   }
-  .code-copy-btn:hover { background: rgba(255,255,255,.18); }
+  .code-copy-btn:hover { background: rgba(255,255,255,.22); }
   .code-copy-btn.copied { color: #86efac; border-color: #86efac44; }
   .code-block {
     background: #1e1b2e; color: #e2dff0; border-radius: 10px;
@@ -1047,6 +1061,7 @@
       <button id="ask-btn" onclick="ask()">Search →</button>
       <button id="stop-btn" onclick="stopQuery()" style="display:none">Stop ▪</button>
     </div>
+    <div class="ask-progress" id="ask-progress"><div class="ask-progress-bar"></div></div>
   </div>
   <!-- Hero strip — always visible, explains the tab -->
   <div class="pipeline-hero" style="padding:18px 0 14px">
@@ -1580,6 +1595,64 @@ client = OpenAI(
       </div>
     </div>
 
+    <div class="about-section collapsed" id="as-structure">
+      <div class="about-section-header" onclick="toggleAboutSection('as-structure', this)">
+        <span class="about-section-arrow">▾</span>
+        <div>
+          <div class="about-section-title">Project Structure</div>
+          <div class="about-section-preview">Key files and what each one does</div>
+        </div>
+      </div>
+      <div class="about-section-body">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 10px 6px 0;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap">File</th>
+              <th style="text-align:left;padding:6px 0 6px 10px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">server.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">HTTP server — routes requests, streams SSE events to the UI</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">index.html</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">Single-page frontend — all three tabs, no build step</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">search_tool.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">You.com Search API wrapper — tool schema, system prompt, and <code style="font-size:12px">execute_search()</code></td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">base_agent.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">Tool-use loop — <code style="font-size:12px">OpenAICompatibleAgent</code> drives the search → LLM → search cycle</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">models.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">Model registry — display names, model IDs, and per-token pricing</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">costs.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">Cost calculation — token + search call pricing formatted for the UI</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">agents/parasail_agent.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">Parasail-specific agent — client setup, model defaults, wires into <code style="font-size:12px">OpenAICompatibleAgent</code></td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;border-bottom:1px solid var(--border-lt);white-space:nowrap"><code style="font-size:12px;color:var(--primary)">agents/pipeline_agent.py</code></td>
+              <td style="padding:7px 0 7px 10px;border-bottom:1px solid var(--border-lt);color:var(--text-2)">Three-stage pipeline — <code style="font-size:12px">enrich()</code>, <code style="font-size:12px">brief_stream()</code>, <code style="font-size:12px">email_stream()</code></td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px 7px 0;white-space:nowrap"><code style="font-size:12px;color:var(--primary)">.env.example</code></td>
+              <td style="padding:7px 0 7px 10px;color:var(--text-2)">Environment variable template — copy to <code style="font-size:12px">.env</code> and add your API keys</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1732,6 +1805,7 @@ function ask() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Searching…';
   stopBtn.style.display = 'inline-block';
+  document.getElementById('ask-progress').classList.add('active');
 
   const results = document.getElementById('results');
   results.innerHTML = '';
@@ -2082,12 +2156,12 @@ function handleEvent(ev) {
 
     // Post-answer plain-English summary
     const answerEl = document.getElementById('answer');
+    const searchOn = document.getElementById('ask-search-track')?.classList.contains('on');
     if (answerEl) {
       document.getElementById('answer-summary')?.remove();
       const searches = s.search_calls || 0;
       const tokens = s.tokens_used || 0;
       const cost = costs.total_fmt || (costs.total !== undefined ? '$' + costs.total.toFixed(5) : null);
-      const searchOn = document.getElementById('ask-search-track')?.classList.contains('on');
       const parts = [];
       if (searchOn && searches > 0) parts.push(`<strong>${searches}</strong> You.com search${searches > 1 ? 'es' : ''}`);
       else if (!searchOn) parts.push('no web search · model answered from training data only');
@@ -2099,6 +2173,48 @@ function handleEvent(ev) {
         div.className = 'answer-summary';
         div.innerHTML = parts.join(' · ');
         answerEl.parentElement.appendChild(div);
+      }
+    }
+
+    // When search is off, replace the empty Searches panel with the actual API request
+    if (!searchOn) {
+      const secSearches = document.getElementById('sec-searches');
+      if (secSearches) {
+        const modelId = _esc(s.model_confirmed || document.getElementById('model-select').value || 'unknown');
+        const question = _esc(document.getElementById('question').value.trim());
+        const requestObj = {
+          model: s.model_confirmed || document.getElementById('model-select').value,
+          messages: [{ role: 'user', content: document.getElementById('question').value.trim() }],
+          max_tokens: 1500,
+          stream: true,
+        };
+        secSearches.outerHTML = `
+          <div class="section-block" id="sec-searches">
+            <div class="section-header" onclick="toggleSection('sec-searches-body', this)">
+              <div class="section-title" style="color:var(--muted)">
+                🚫 No web search
+                <span style="font-size:11px;font-weight:400;margin-left:8px">model answered from training data only</span>
+              </div>
+              <span class="section-arrow">▾</span>
+            </div>
+            <div class="section-body" id="sec-searches-body">
+              <div class="section-body-inner">
+                <div style="font-size:12.5px;color:var(--text-2);margin-bottom:12px;line-height:1.6">
+                  You.com Web Search was off. The request went directly to Parasail — no retrieval, no live context.
+                  The model answered from its training data alone (cutoff: late 2024).
+                  Toggle <strong>You.com Web Search</strong> on and ask again to see the difference.
+                </div>
+                <div class="drawer-label">API Request — POST https://api.parasail.io/v1/chat/completions</div>
+                <div class="code-block-wrap">
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                  <pre class="code-block" style="white-space:pre">${_esc(JSON.stringify(requestObj, null, 2))}</pre>
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+                  See <button class="pipe-code-btn" style="display:inline;padding:2px 8px;font-size:12px" onclick="openAskDrawer(this)">Code &amp; Prompt</button> for the full server implementation.
+                </div>
+              </div>
+            </div>
+          </div>`;
       }
     }
   }
@@ -2276,6 +2392,7 @@ function finalize() {
   btn.disabled = false;
   btn.innerHTML = 'Search →';
   if (stopBtn) stopBtn.style.display = 'none';
+  document.getElementById('ask-progress').classList.remove('active');
 }
 
 // ── JSON Tree ─────────────────────────────────────────────────────────────
@@ -3370,7 +3487,7 @@ function openCodeDrawer(stepNum, btnEl, slug) {
   pp.innerHTML = `
     <div class="drawer-label">${info.prompt.label}</div>
     ${promptNote}
-    <div class="code-block" style="background:#f5f3ff;color:#3b0764;border:1px solid #ddd6fe">${_esc(info.prompt.text)}</div>
+    <div class="code-block" style="background:#f5f3ff;color:#3b0764;border:1px solid #ddd6fe;white-space:pre-wrap;word-break:break-word">${_esc(info.prompt.text)}</div>
     ${userMsgHtml}
   `;
 
@@ -3455,7 +3572,7 @@ function openAskDrawer(btnEl) {
       Injected at the start of every Grounded Inference request. Instructs the model
       when to search, how many rounds, and how to cite sources.
     </p>
-    <div class="code-block" style="background:#f5f3ff;color:#3b0764;border:1px solid #ddd6fe">${_esc(src.system_prompt || '(not loaded)')}</div>
+    <div class="code-block" style="background:#f5f3ff;color:#3b0764;border:1px solid #ddd6fe;white-space:pre-wrap;word-break:break-word">${_esc(src.system_prompt || '(not loaded)')}</div>
   `;
 
   // Code panel — toggle routing first, then agent + search tool

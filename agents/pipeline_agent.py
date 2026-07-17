@@ -12,10 +12,9 @@ Stage 3  email(company, brief)    → outreach email via LLM (SSE)
 import logging
 import os
 import re
+import sys
 import time
 
-import sys
-import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
