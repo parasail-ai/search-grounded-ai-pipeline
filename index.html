@@ -1,0 +1,3540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parasail × You.com Web Search — Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap">
+<style>
+  :root {
+    --bg:           #fafafa;
+    --card:         #ffffff;
+    --band:         #f1f5f9;
+    --fill:         #f0f1f3;
+    --border:       #e4e6e9;
+    --border-lt:    #f0f1f3;
+    --border-mid:   #d0d3d8;
+    --text:         #1c1528;
+    --text-2:       #5b4f72;
+    --muted:        #9387af;
+    --primary:      #6d28d9;
+    --primary-mid:  #8b5cf6;
+    --primary-100:  #ede9fe;
+    --primary-200:  #ddd6fe;
+    --primary-hover:#5b21b6;
+    --accent:       #7c5cfc;
+    --accent-light: #ede9fe;
+    --coral:        #d97756;
+    --green:        #059669;
+    --green-bg:     #ecfdf5;
+    --red:          #dc2626;
+    --red-bg:       #fef2f2;
+    --orange:       #b45309;
+    --orange-bg:    #fef3c7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ─── Page centering ─────────────────────────────────────────────── */
+  .page-center {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ─── Header ─────────────────────────────────────────────────────── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0 0;
+  }
+  .header-inner { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+  .header-top { display: flex; align-items: center; gap: 12px; }
+  .header h1 { font-size: 19px; font-weight: 600; }
+  .badge {
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+    border-radius: 20px; background: var(--accent-light); color: var(--accent);
+    letter-spacing: 0.3px;
+  }
+  .header .subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .tab-bar { display: flex; gap: 4px; margin-top: 16px; align-items: flex-end; }
+  .tab-btn {
+    padding: 8px 20px; font-size: 13px; font-weight: 500;
+    color: var(--muted); background: var(--band);
+    border: 1px solid var(--border); border-bottom: none;
+    border-radius: 6px 6px 0 0; cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .tab-btn:hover { color: var(--text-2); background: var(--fill); }
+  .tab-btn.active {
+    color: var(--text); font-weight: 600;
+    background: var(--card); border-color: var(--border);
+    margin-bottom: -1px; padding-bottom: 9px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .tab-panel.chat-layout { display: none; }
+  .tab-panel.chat-layout.active { display: flex; }
+
+  /* ─── Input bar ──────────────────────────────────────────────────── */
+  .input-bar {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .input-bar-inner {
+    max-width: 860px; margin: 0 auto; padding: 0 24px;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .input-bar select {
+    background: #fff; color: var(--text);
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; cursor: pointer;
+    font-family: inherit; min-width: 210px;
+  }
+  .input-bar input[type="text"] {
+    flex: 1; background: #fff; color: var(--text);
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 10px 16px; font-size: 14px; outline: none; font-family: inherit;
+  }
+  .input-bar input:focus { border-color: var(--accent); }
+  .input-bar button {
+    background: var(--primary); color: #fff; border: none;
+    border-radius: 8px; padding: 10px 24px; font-size: 14px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background 0.15s; white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(109,40,217,.25);
+  }
+  .input-bar button:hover { background: var(--primary-hover); }
+  .input-bar button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  #stop-btn { background: var(--red); box-shadow: none; }
+  #stop-btn:hover { background: #b91c1c; }
+
+  /* ─── Results area ───────────────────────────────────────────────── */
+  .results { padding: 28px 0; max-width: 860px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ─── Model pill ─────────────────────────────────────────────────── */
+  .model-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-light); color: var(--accent);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600;
+  }
+
+  /* ─── Stats strip ────────────────────────────────────────────────── */
+  .stats-strip {
+    display: flex; align-items: stretch; gap: 0;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; margin: 20px 0 28px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .stat-cell {
+    flex: 1; padding: 10px 16px; border-right: 1px solid var(--border-lt);
+    text-align: center; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+  }
+  .stat-cell:first-child::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 12px 0 0 0;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell-label {
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px;
+  }
+  .stat-cell-value {
+    font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600;
+    color: var(--text); line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .stat-cell-value.loading {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px; color: var(--muted); font-weight: 400;
+  }
+  .stat-cell-value.small {
+    font-size: 11px; font-family: 'Outfit', sans-serif; font-weight: 500;
+  }
+  /* token sub-breakdown: three small chips */
+  .token-breakdown {
+    display: flex; justify-content: center; gap: 5px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .token-chip {
+    font-size: 11px; color: var(--text-2); background: var(--band);
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  .token-chip span { color: var(--muted); }
+  /* clickable cost cell */
+  .cost-clickable {
+    cursor: pointer;
+    text-decoration: underline dotted var(--muted);
+    display: inline-block;
+  }
+  .cost-clickable:hover { color: var(--primary); }
+  .cost-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* ─── Skeleton shimmer ───────────────────────────────────────────── */
+  .skel {
+    background: linear-gradient(90deg, var(--fill) 25%, var(--band) 50%, var(--fill) 75%);
+    background-size: 200% 100%;
+    animation: skel-shimmer 1.4s ease-in-out infinite;
+    border-radius: 8px;
+  }
+  @keyframes skel-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ─── Retrying notice ────────────────────────────────────────────── */
+  .retrying-notice {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; margin-bottom: 16px;
+    background: var(--orange-bg); border: 1px solid #fcd34d;
+    border-radius: 8px; font-size: 13px; color: var(--orange);
+  }
+
+  /* ─── Cost popup ─────────────────────────────────────────────────── */
+  #costPopup {
+    display: none; position: fixed; z-index: 999;
+    background: var(--card); border: 1px solid var(--border-mid);
+    border-radius: 10px; padding: 18px 20px; min-width: 300px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  #costPopup.visible { display: block; }
+  #costPopup h4 { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+  #costPopup .popup-section { margin-bottom: 12px; }
+  #costPopup .popup-section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px;
+  }
+  #costPopup .popup-line {
+    display: flex; justify-content: space-between; gap: 16px;
+    font-size: 13px; padding: 2px 0;
+  }
+  #costPopup .popup-line .desc { color: var(--text-2); }
+  #costPopup .popup-line .val { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+  #costPopup .popup-total {
+    display: flex; justify-content: space-between; font-size: 14px; font-weight: 700;
+    border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px;
+  }
+  #costPopup .popup-close {
+    position: absolute; top: 12px; right: 14px;
+    cursor: pointer; font-size: 16px; color: var(--muted); line-height: 1;
+  }
+  #costPopup .popup-close:hover { color: var(--text); }
+  #costPopup .popup-footnote {
+    font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.5;
+    border-top: 1px solid var(--border); padding-top: 8px;
+  }
+
+  /* ─── Section block (collapsible) ────────────────────────────────── */
+  .section-block {
+    background: var(--card); border: 1px solid var(--border-lt);
+    border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: var(--card); cursor: pointer;
+    user-select: none; transition: background 0.12s;
+  }
+  .section-header:hover { background: var(--band); }
+  .section-title {
+    font-size: 14px; font-weight: 600; color: var(--text-2);
+    display: flex; align-items: center; gap: 10px;
+    text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px;
+  }
+  .section-badge {
+    font-size: 11px; font-weight: 600; color: var(--primary);
+    background: var(--primary-100); border: 1px solid var(--primary-200);
+    border-radius: 20px; padding: 2px 9px;
+  }
+  .section-arrow {
+    font-size: 20px; color: var(--text); opacity: 0.55; flex-shrink: 0;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; background: var(--band);
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .section-header:hover .section-arrow { opacity: 1; background: var(--primary-100); }
+  .section-body { border-top: 1px solid var(--border-lt); }
+  .section-block.collapsed .section-body { display: none; }
+  .section-body-inner { padding: 16px 20px; }
+
+  /* ─── Search trace ───────────────────────────────────────────────── */
+  .trace { }
+  .trace-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; background: var(--band);
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; font-size: 13px;
+  }
+  .trace-item:last-child { margin-bottom: 0; }
+  .trace-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .trace-content { flex: 1; }
+  .trace-query { font-weight: 600; color: var(--text); }
+  .livecrawl-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 7px; border-radius: 20px;
+    background: #fff3e0; color: #e65100;
+    vertical-align: middle; margin-right: 6px; text-transform: uppercase;
+  }
+  .trace-meta { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .trace-item.search { border-left: 3px solid var(--accent); }
+  .trace-item.result { border-left: 3px solid var(--green); background: var(--green-bg); }
+
+  /* ─── Answer ─────────────────────────────────────────────────────── */
+  .answer-inner {
+    line-height: 1.75; font-size: 15px; color: var(--text);
+  }
+  .answer-inner h1,.answer-inner h2,.answer-inner h3 { font-size: 15px; font-weight: 700; margin: 16px 0 6px; }
+  .answer-inner h1:first-child,.answer-inner h2:first-child,.answer-inner h3:first-child { margin-top: 0; }
+  .answer-inner p { margin-bottom: 10px; }
+  .answer-inner p:last-child { margin-bottom: 0; }
+  .answer-inner strong { font-weight: 700; }
+  .answer-inner em { font-style: italic; }
+  .answer-inner ul,.answer-inner ol { padding-left: 22px; margin-bottom: 10px; }
+  .answer-inner li { margin-bottom: 4px; }
+  .answer-inner table { border-collapse: collapse; width: 100%; margin-bottom: 12px; font-size: 13px; }
+  .answer-inner th { background: var(--band); border: 1px solid var(--border); padding: 6px 10px; text-align: left; font-weight: 600; }
+  .answer-inner td { border: 1px solid var(--border); padding: 6px 10px; }
+  .answer-inner code { background: var(--fill); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 13px; }
+  .answer-inner sup { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+  /* ─── Sources ────────────────────────────────────────────────────── */
+  .source-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 7px; margin-bottom: 6px; font-size: 13px;
+  }
+  .source-item:last-child { margin-bottom: 0; }
+  .source-num {
+    background: var(--band); color: var(--text-2);
+    border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .source-url { color: var(--accent); text-decoration: none; word-break: break-all; }
+  .source-url:hover { text-decoration: underline; }
+
+  /* ─── Raw output ─────────────────────────────────────────────────── */
+  .raw-pre {
+    background: var(--band); border-radius: 6px;
+    padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.6;
+    color: var(--text-2); white-space: pre-wrap; word-break: break-word;
+    max-height: 400px; overflow-y: auto;
+  }
+
+  /* ─── Placeholder ────────────────────────────────────────────────── */
+  .placeholder {
+    padding: 60px 0; text-align: center; color: var(--muted); font-size: 14px;
+  }
+  .placeholder h3 { font-size: 16px; color: var(--text-2); margin-bottom: 8px; }
+
+  /* ─── About tab ──────────────────────────────────────────────────── */
+  .about-content { padding: 32px 24px; max-width: 860px; margin: 0 auto; }
+  .about-content > h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .about-content > p { font-size: 14px; color: var(--text-2); line-height: 1.65; margin-bottom: 20px; }
+
+  /* collapsible sections in About tab */
+  .about-section { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .about-section-header {
+    display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px;
+    cursor: pointer; background: var(--card); user-select: none;
+    transition: background 0.12s;
+  }
+  .about-section-header:hover { background: var(--band); }
+  .about-section-arrow {
+    font-size: 20px; color: var(--text); opacity: 0.55; flex-shrink: 0;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; background: var(--band);
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .about-section-header:hover .about-section-arrow { opacity: 1; background: var(--primary-100); }
+  .about-section-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .about-section-preview { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .about-section-body { border-top: 1px solid var(--border); padding: 20px; }
+  .about-section.collapsed .about-section-body { display: none; }
+
+  .model-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+  .model-table th {
+    text-align: left; padding: 8px 12px; background: var(--band);
+    border: 1px solid var(--border); color: var(--text-2); font-weight: 600;
+  }
+  .model-table td { padding: 8px 12px; border: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  .model-table tr:hover td { background: var(--fill); }
+
+  /* config table (matches core repo metric-table style) */
+  .config-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+  .config-table th {
+    text-align: left; padding: 8px 12px; background: var(--band);
+    border: 1px solid var(--border); color: var(--text-2); font-weight: 600;
+  }
+  .config-table td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+  .config-table tr:hover td { background: var(--fill); }
+  .config-section-label {
+    font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase;
+    letter-spacing: 0.05em; margin: 20px 0 8px;
+  }
+  .config-section-label:first-child { margin-top: 0; }
+  .config-prompt {
+    background: var(--band); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; font-family: monospace; font-size: 12px; color: var(--text-2);
+    white-space: pre-wrap; line-height: 1.6;
+  }
+
+  /* ─── Streaming pulse ────────────────────────────────────────────── */
+  .streaming-border { border-color: var(--accent) !important; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Chat tab ───────────────────────────────────────────────────── */
+  .chat-layout {
+    display: flex; flex-direction: column;
+    height: calc(100vh - 105px); /* subtract header height */
+    overflow: hidden;
+  }
+  .chat-thread {
+    flex: 1; overflow-y: auto;
+    max-width: 860px; width: 100%; margin: 0 auto;
+    padding: 24px 24px 16px;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 20px;
+    box-sizing: border-box;
+  }
+  .chat-composer {
+    border-top: 1px solid var(--border); background: var(--card);
+    padding: 14px 0;
+    flex-shrink: 0;
+  }
+  .chat-composer-inner {
+    max-width: 860px; margin: 0 auto; padding: 0 24px;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .chat-composer-inner select {
+    background: #fff; color: var(--text);
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; cursor: pointer;
+    font-family: inherit; min-width: 200px;
+  }
+  .chat-composer-inner input[type="text"] {
+    flex: 1; background: #fff; color: var(--text);
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 10px 16px; font-size: 14px; outline: none; font-family: inherit;
+  }
+  .chat-composer-inner input:focus { border-color: var(--accent); }
+  .chat-composer-inner button {
+    background: var(--primary); color: #fff; border: none;
+    border-radius: 8px; padding: 10px 20px; font-size: 14px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background 0.15s; white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(109,40,217,.25);
+  }
+  .chat-composer-inner button:hover { background: var(--primary-hover); }
+  .chat-composer-inner button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  #chat-stop-btn { background: var(--red); box-shadow: none; }
+  #chat-new-btn { background: var(--band); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
+  #chat-new-btn:hover { background: var(--border); }
+  /* ── Chat turn ── */
+  .chat-turn {
+    display: flex; flex-direction: column; gap: 10px;
+    border-top: 1px solid var(--border); padding-top: 20px;
+  }
+  .chat-turn:first-child { border-top: none; padding-top: 0; }
+
+  /* User row: label + bubble */
+  .chat-row-user {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  }
+  .chat-row-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--muted); padding: 0 4px;
+  }
+  .chat-bubble-user {
+    max-width: 68%;
+    background: var(--accent); color: #fff;
+    border-radius: 16px 16px 4px 16px;
+    padding: 10px 16px; font-size: 14px; line-height: 1.5;
+  }
+
+  /* Assistant row: full-width card with header */
+  .chat-row-assistant { display: flex; flex-direction: column; gap: 0; }
+  .chat-assistant-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .chat-assistant-card.streaming { border-color: var(--accent); }
+  .chat-assistant-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: var(--band);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--muted);
+  }
+  .chat-assistant-header-left { display: flex; align-items: center; gap: 8px; }
+  .chat-assistant-model {
+    font-weight: 600; font-size: 11px; color: var(--accent);
+  }
+  .chat-assistant-body {
+    padding: 16px 18px; font-size: 14px; line-height: 1.7;
+  }
+  .chat-assistant-footer {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 8px 14px; border-top: 1px solid var(--border);
+    background: var(--band);
+  }
+  .chat-footer-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 500; background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 11px; color: var(--muted);
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .chat-footer-chip .chip-arrow { font-size: 9px; opacity: 0.6; }
+  .chat-footer-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .chat-footer-chip.active {
+    background: var(--accent-light); border-color: var(--accent);
+    color: var(--accent);
+  }
+  .chat-footer-chip.active .chip-arrow { opacity: 1; }
+  .chat-footer-chip.plain { cursor: default; }
+  .chat-footer-chip.plain:hover { border-color: var(--border); color: var(--muted); background: var(--card); }
+
+  /* Searches + request panels inside the card */
+  .chat-searches-body { display: none; border-top: 1px solid var(--border); }
+  .chat-searches-body.open { display: block; }
+  .chat-request-body {
+    display: none; border-top: 1px solid var(--border);
+    background: #f7f7fb;
+    padding: 12px 16px; overflow-x: auto;
+    font-family: 'SF Mono','Fira Mono',monospace; font-size: 11.5px; line-height: 1.7;
+  }
+  .chat-request-body.open { display: block; }
+  .chat-searches-toggle { display: none; } /* replaced by footer chips */
+  /* JSON tree */
+  /* ─── Tooltips ──────────────────────────────────────────────────── */
+  .tip {
+    border-bottom: 1px dotted var(--muted);
+    cursor: help;
+    position: relative;
+    display: inline;
+  }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a2e;
+    color: #f0f0f8;
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: normal;
+    width: max-content;
+    max-width: 260px;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    font-weight: 400;
+    font-style: normal;
+  }
+  .tip:hover::after { opacity: 1; }
+
+  /* ─── Post-answer summary ────────────────────────────────────────── */
+  .answer-summary {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 8px 0 4px;
+    border-top: 1px solid var(--border-lt);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+  .answer-summary strong { color: var(--text-2); font-weight: 600; }
+
+  /* ─── Pipeline hero ─────────────────────────────────────────────── */
+  .pipeline-hero {
+    background: linear-gradient(135deg, var(--primary-100) 0%, #f5f3ff 60%, var(--band) 100%);
+    border-bottom: 1px solid var(--primary-200);
+    padding: 32px 0 28px;
+  }
+  .pipeline-hero-inner {
+    max-width: 860px; margin: 0 auto; padding: 0 24px;
+    display: flex; gap: 48px; align-items: flex-start;
+  }
+  .pipeline-hero-text { flex: 1; }
+  .pipeline-hero-eyebrow {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--primary); margin-bottom: 8px;
+  }
+  .pipeline-hero-title {
+    font-size: 20px; font-weight: 700; color: var(--text);
+    line-height: 1.3; margin-bottom: 10px; text-wrap: balance;
+  }
+  .pipeline-hero-desc {
+    font-size: 13px; color: var(--text-2); line-height: 1.65; max-width: 420px;
+  }
+  .pipeline-hero-steps {
+    display: flex; flex-direction: column; gap: 8px; max-width: 420px;
+  }
+  .pipeline-hero-step {
+    display: flex; align-items: baseline; gap: 10px; font-size: 13px; color: var(--text-2);
+  }
+  .pipeline-hero-step-num {
+    font-size: 11px; font-weight: 700; color: var(--primary);
+    min-width: 16px; padding-top: 1px;
+  }
+  .pipeline-hero-step strong { color: var(--text); font-weight: 600; }
+
+  /* How-it-works steps in hero */
+  .pipeline-how {
+    display: flex; flex-direction: column; gap: 0;
+    min-width: 240px; padding-top: 4px;
+  }
+  .pipeline-how-step {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .pipeline-how-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .pipeline-how-label { font-size: 13px; font-weight: 700; color: var(--text); }
+  .pipeline-how-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .pipeline-how-line  { width: 2px; height: 18px; background: var(--primary-200); margin-left: 13px; }
+
+  /* Input form card */
+  .pipeline-form-wrap {
+    max-width: 860px; margin: 24px auto 0; padding: 0 24px;
+  }
+  .pipeline-form {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .pipeline-step-card {
+    background: var(--card); border: 1px solid var(--border-lt);
+    border-radius: 12px; padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .pipeline-step-card-header {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pipeline-step-num-badge {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    font-size: 11px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .pipeline-step-card-title {
+    font-size: 12px; font-weight: 700; color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .pipeline-step-card-sub {
+    font-size: 11px; color: var(--muted); margin-top: 1px;
+  }
+  .pipeline-field-label {
+    display: block; font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px;
+  }
+  .pipeline-textarea {
+    width: 100%; box-sizing: border-box; resize: vertical; flex: 1;
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; font-family: inherit;
+    color: var(--text); background: #fff; outline: none;
+    line-height: 1.55; min-height: 80px;
+  }
+  .pipeline-textarea:focus { border-color: var(--primary); }
+  .pipeline-select {
+    width: 100%; background: #fff; color: var(--text);
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 8px 12px; font-size: 13px; font-family: inherit;
+  }
+  .pipeline-models { display: flex; flex-direction: column; gap: 12px; }
+  .pipeline-run-card {
+    background: var(--primary); border-radius: 12px; padding: 16px 24px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 6px; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(109,40,217,.25);
+    transition: background 0.15s, box-shadow 0.15s;
+    min-width: 140px;
+  }
+  .pipeline-run-card:hover { background: var(--primary-hover); box-shadow: 0 4px 16px rgba(109,40,217,.35); }
+  .pipeline-run-card:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  .pipeline-run-icon { font-size: 22px; }
+  .pipeline-run-label { font-size: 15px; font-weight: 700; color: #fff; }
+  .pipeline-run-sub { font-size: 11px; color: rgba(255,255,255,.75); }
+  .pipeline-run-btn {
+    width: 100%; background: var(--primary); color: #fff; border: none;
+    border-radius: 8px; padding: 11px 20px; font-size: 14px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+    box-shadow: 0 1px 3px rgba(109,40,217,.3);
+  }
+  .pipeline-run-btn:hover { background: var(--primary-hover); }
+  .pipeline-run-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+  /* ─── Pipeline tab ──────────────────────────────────────────────── */
+  .company-card {
+    background: var(--card); border: 1px solid var(--border-lt);
+    border-radius: 12px; overflow: hidden; margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .company-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: var(--band);
+    border-bottom: 1px solid var(--border-lt);
+  }
+  .company-card-name {
+    font-size: 15px; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Step indicator dots in header */
+  .pipe-steps-indicator { display: flex; align-items: center; gap: 0; }
+  .pipe-step-dot {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    background: var(--fill); color: var(--muted);
+    border: 2px solid var(--border); transition: all 0.25s;
+  }
+  .pipe-step-dot.active { background: var(--primary-100); border-color: var(--primary); color: var(--primary); }
+  .pipe-step-dot.done   { background: var(--green-bg);    border-color: var(--green);   color: var(--green); font-size: 10px; }
+  .pipe-step-line { width: 24px; height: 2px; background: var(--border); }
+
+  /* Step blocks */
+  .pipe-step-block { border-top: 1px solid var(--border-lt); }
+  .pipe-step-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px 10px;
+    user-select: none;
+  }
+  .pipe-collapse-arrow {
+    font-size: 20px; color: var(--text); opacity: 0.55; flex-shrink: 0;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; background: var(--band);
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .pipe-step-header:hover .pipe-collapse-arrow {
+    opacity: 1; background: var(--primary-100);
+  }
+  .pipe-step-num {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; margin-top: 1px;
+  }
+  .pipe-step-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .pipe-step-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .pipe-step-body  { padding: 0 20px 16px; }
+
+  /* Search hit cards */
+  /* ── Step 1 search settings bar ──────────────────────────────────────── */
+  .search-settings {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 8px 12px; border-radius: 8px; background: var(--band);
+    margin-bottom: 12px; font-size: 12px;
+  }
+  .search-settings-label { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .result-pills { display: flex; gap: 4px; }
+  .result-pill {
+    padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text-2); font-size: 11.5px; font-weight: 600;
+    cursor: pointer; transition: all .12s;
+  }
+  .result-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .lc-toggle {
+    display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+  }
+  .lc-track {
+    width: 32px; height: 18px; border-radius: 9px; background: var(--border);
+    position: relative; transition: background .15s; flex-shrink: 0;
+  }
+  .lc-track.on { background: var(--primary); }
+  .lc-thumb {
+    width: 14px; height: 14px; border-radius: 50%; background: #fff;
+    position: absolute; top: 2px; left: 2px; transition: left .15s;
+  }
+  .lc-track.on .lc-thumb { left: 16px; }
+  .rerun-btn {
+    margin-left: auto; padding: 4px 12px; border-radius: 6px;
+    border: 1px solid var(--primary); background: none; color: var(--primary);
+    font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    transition: all .12s;
+  }
+  .rerun-btn:hover { background: var(--primary); color: #fff; }
+  .rerun-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .intel-hit { padding: 10px 0; border-bottom: 1px solid var(--border-lt); }
+  .intel-hit:last-child { border-bottom: none; }
+
+  /* ── JSON tree ──────────────────────────────────────────────────────────── */
+  .json-tree-wrap {
+    margin-top: 14px; border-top: 1px solid var(--border-lt); padding-top: 12px;
+  }
+  .json-tree-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 600; color: var(--muted);
+    background: none; border: none; cursor: pointer; padding: 0;
+  }
+  .json-tree-toggle:hover { color: var(--primary); }
+  .json-tree-toggle .jtarrow { font-size: 10px; transition: transform .15s; }
+  .json-tree-toggle.open .jtarrow { transform: rotate(90deg); }
+  .json-tree-root { display: none; margin-top: 10px; overflow-x: auto; }
+  .json-tree-root.open { display: block; }
+  .jt { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; line-height: 1.7; }
+  .jt ul { list-style: none; margin: 0; padding: 0 0 0 16px;
+           border-left: 1.5px solid var(--border); }
+  .jt li { position: relative; }
+  .jt-key { color: var(--primary); font-weight: 600; cursor: default; }
+  .jt-str { color: #059669; }
+  .jt-num { color: #d97706; }
+  .jt-bool { color: #7c3aed; }
+  .jt-null { color: var(--muted); font-style: italic; }
+  .jt-expander {
+    cursor: pointer; user-select: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .jt-expander .jte { font-size: 9px; color: var(--muted); transition: transform .12s; }
+  .jt-expander.open .jte { transform: rotate(90deg); }
+  .jt-children { display: none; }
+  .jt-children.open { display: block; }
+  .jt-summary { color: var(--muted); font-size: 10px; margin-left: 4px; }
+  .intel-hit-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .intel-hit-title a { color: var(--primary); text-decoration: none; }
+  .intel-hit-title a:hover { text-decoration: underline; }
+  .intel-hit-desc { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 3px; }
+  .intel-hit-meta { font-size: 11px; color: var(--muted); }
+
+  /* Editable brief textarea */
+  .pipe-brief-editor {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid var(--border-mid); border-radius: 8px;
+    padding: 12px 14px; font-size: 13px; font-family: inherit;
+    color: var(--text); background: var(--band); line-height: 1.65;
+    resize: vertical; outline: none; transition: border-color 0.15s;
+  }
+  .pipe-brief-editor:not([readonly]):focus { border-color: var(--primary); background: #fff; }
+
+  /* Action bar between steps */
+  .pipe-action-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-top: 1px solid var(--border-lt);
+    background: var(--band);
+  }
+  .pipe-action-btn {
+    background: var(--primary); color: #fff; border: none;
+    border-radius: 8px; padding: 9px 20px; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    white-space: nowrap; box-shadow: 0 1px 3px rgba(109,40,217,.25);
+    transition: background 0.15s;
+  }
+  .pipe-action-btn:hover { background: var(--primary-hover); }
+
+  /* ── Code drawer ──────────────────────────────────────────────────────── */
+  #code-drawer {
+    position: fixed; top: 0; right: 0; width: 480px; height: 100vh;
+    background: var(--bg); border-left: 1px solid var(--border);
+    box-shadow: -4px 0 24px rgba(0,0,0,.10);
+    display: flex; flex-direction: column; z-index: 200;
+    transform: translateX(100%); transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  #code-drawer.open { transform: translateX(0); }
+  .drawer-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .drawer-step-badge {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .drawer-title { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; }
+  .drawer-close {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    background: var(--band); color: var(--muted); cursor: pointer;
+    font-size: 16px; display: flex; align-items: center; justify-content: center;
+  }
+  .drawer-close:hover { background: var(--primary-100); color: var(--primary); }
+  .drawer-tabs {
+    display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .drawer-tab {
+    padding: 10px 20px; font-size: 12px; font-weight: 600;
+    color: var(--muted); border: none; background: none; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .drawer-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .drawer-body {
+    flex: 1; overflow-y: auto; padding: 20px;
+  }
+  .drawer-panel { display: none; }
+  .drawer-panel.active { display: block; }
+  .drawer-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+  .drawer-finding {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+    padding: 10px 14px; margin-bottom: 16px; font-size: 12px;
+    color: #92400e; line-height: 1.5;
+  }
+  @media (prefers-color-scheme: dark) {
+    .drawer-finding { background: #1c1400; border-color: #713f12; color: #fbbf24; }
+  }
+  :root[data-theme="dark"] .drawer-finding { background: #1c1400; border-color: #713f12; color: #fbbf24; }
+  :root[data-theme="light"] .drawer-finding { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+  .code-block-wrap { position: relative; margin-bottom: 16px; }
+  .code-block-wrap .code-block { margin-bottom: 0; }
+  .code-copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+    color: #c4b5fd; border-radius: 6px; padding: 3px 8px;
+    font-size: 11px; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .code-copy-btn:hover { background: rgba(255,255,255,.18); }
+  .code-copy-btn.copied { color: #86efac; border-color: #86efac44; }
+  .code-block {
+    background: #1e1b2e; color: #e2dff0; border-radius: 10px;
+    padding: 16px; font-size: 11.5px; line-height: 1.65;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    overflow-x: auto; white-space: pre; margin-bottom: 16px;
+  }
+  /* Models popup */
+  .models-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 400;
+    background: rgba(0,0,0,.45); align-items: center; justify-content: center;
+  }
+  .models-modal-overlay.open { display: flex; }
+  .models-modal {
+    background: var(--card); border: 1px solid var(--border-lt);
+    border-radius: 14px; width: 680px; max-width: 95vw; max-height: 85vh;
+    overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    padding: 28px 32px;
+  }
+  .models-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .models-modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .models-modal-close {
+    background: none; border: none; font-size: 20px; cursor: pointer;
+    color: var(--muted); line-height: 1; padding: 4px;
+  }
+  .models-pricing-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  .models-pricing-table th {
+    font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; text-align: left; padding: 6px 10px;
+    border-bottom: 1px solid var(--border-lt);
+  }
+  .models-pricing-table td {
+    font-size: 13px; color: var(--text); padding: 10px 10px;
+    border-bottom: 1px solid var(--border-lt);
+  }
+  .models-pricing-table td:nth-child(3),
+  .models-pricing-table td:nth-child(4) { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .models-section-label { font-size: 12px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+  .code-block .ck { color: #a78bfa; }   /* keyword */
+  .code-block .cs { color: #86efac; }   /* string */
+  .code-block .cc { color: #6b7280; font-style: italic; } /* comment */
+  .code-block .cf { color: #7dd3fc; }   /* function */
+  .code-block .cn { color: #fb923c; }   /* number / const */
+  .thinking-block {
+    background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px;
+    padding: 14px 16px; font-size: 11.5px; line-height: 1.7;
+    color: #4c1d95; white-space: pre-wrap; font-family: inherit;
+    max-height: 60vh; overflow-y: auto;
+  }
+  @media (prefers-color-scheme: dark) {
+    .thinking-block { background: #1a0533; border-color: #6b21a8; color: #d8b4fe; }
+  }
+  :root[data-theme="dark"] .thinking-block { background: #1a0533; border-color: #6b21a8; color: #d8b4fe; }
+  :root[data-theme="light"] .thinking-block { background: #faf5ff; border-color: #e9d5ff; color: #4c1d95; }
+  .thinking-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .pipe-code-btn {
+    height: 28px; padding: 0 10px; border-radius: 6px; border: none;
+    background: var(--band); color: var(--muted); cursor: pointer;
+    font-size: 11px; font-weight: 600; font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background .15s, color .15s; white-space: nowrap;
+  }
+  .pipe-code-btn:hover { background: var(--primary-100); color: var(--primary); }
+  .pipe-code-btn.active { background: var(--primary); color: #fff; }
+  #drawer-overlay {
+    display: none; position: fixed; inset: 0; z-index: 199;
+  }
+  #drawer-overlay.open { display: block; }
+
+  /* Email output */
+  .email-subject {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    background: var(--primary-100); border-radius: 6px;
+    padding: 8px 12px; margin-bottom: 12px;
+  }
+  .email-body { font-size: 14px; color: var(--text-2); line-height: 1.75; white-space: pre-wrap; }
+
+  .jt-node { display: block; }
+  .jt-toggle {
+    cursor: pointer; user-select: none;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .jt-toggle:hover { opacity: 0.75; }
+  .jt-arrow { font-size: 9px; color: var(--muted); display: inline-block; width: 10px; }
+  .jt-children { margin-left: 18px; border-left: 1px solid #ddd; padding-left: 8px; }
+  .jt-children.collapsed { display: none; }
+  .jt-key { color: #7c3aed; }
+  .jt-colon { color: var(--muted); margin: 0 3px; }
+  .jt-str { color: #059669; }
+  .jt-num { color: #2563eb; }
+  .jt-bool { color: #d97706; }
+  .jt-null { color: var(--muted); font-style: italic; }
+  .jt-bracket { color: #666; }
+  .jt-count { font-size: 10px; color: var(--muted); margin-left: 4px; }
+  .jt-preview { color: var(--muted); font-size: 10.5px; margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <h1>You.com Web Search × Parasail</h1>
+      <span class="badge">Playground</span>
+    </div>
+    <div class="subtitle">Two APIs, one idea: give open-weight LLMs access to the live web so they can answer questions about the world as it is today, not as it was when they were trained.</div>
+    <div class="tab-bar">
+      <button class="tab-btn" onclick="switchTab('about')">How It Works</button>
+      <button class="tab-btn active" onclick="switchTab('ask')">Grounded Inference</button>
+      <button class="tab-btn" onclick="switchTab('chat')">Chat</button>
+      <button class="tab-btn" onclick="switchTab('pipeline')">Outreach Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Ask tab ─────────────────────────────────────────────────────────── -->
+<div id="tab-ask" class="tab-panel active">
+  <div class="input-bar">
+    <div class="input-bar-inner">
+      <select id="model-select">
+        <option value="">Loading models…</option>
+      </select>
+      <div class="lc-toggle" onclick="_toggleSearch(this,'ask-search-track','ask-search-label','ask-btn')" title="Toggle You.com Web Search">
+        <div class="lc-track on" id="ask-search-track"><div class="lc-thumb"></div></div>
+        <span id="ask-search-label" style="font-size:11.5px;font-weight:600;color:var(--primary)">You.com Web Search</span>
+      </div>
+      <input type="text" id="question" placeholder="Ask anything that needs current info…" autocomplete="off">
+      <button id="ask-btn" onclick="ask()">Search →</button>
+      <button id="stop-btn" onclick="stopQuery()" style="display:none">Stop ▪</button>
+    </div>
+  </div>
+  <!-- Hero strip — always visible, explains the tab -->
+  <div class="pipeline-hero" style="padding:18px 0 14px">
+    <div class="pipeline-hero-inner">
+      <div class="pipeline-hero-text">
+        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Grounded Inference</div>
+        <h2 class="pipeline-hero-title" style="font-size:18px;margin-bottom:8px">Any question. Live web context. Open-weight LLM.</h2>
+        <div class="pipeline-hero-steps">
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything current</strong> — news, funding rounds, recent launches, market moves. Things a frozen model can't know.</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>LLM calls You.com as a tool</strong> — it decides what to search and when. Live results land in its context window.</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Grounded answer</strong> — the model reasons over real-time content, not a training snapshot from 12–20 months ago.</span></div>
+        </div>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
+          The question above is pre-filled with a recent event no model knows from training alone. Hit <strong>Search →</strong> with You.com Web Search on, then turn it off and ask again. The difference is the point.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="placeholder">
+      <h3>Ready to search</h3>
+      Select a model, type a question, and hit <strong>Search →</strong>. Watch the search calls counter; that's the LLM reaching out to You.com in real time.
+    </div>
+  </div>
+</div>
+
+<!-- ── Chat tab ───────────────────────────────────────────────────────── -->
+<div id="tab-chat" class="tab-panel chat-layout">
+  <div class="chat-stats-bar" id="chat-stats-bar" style="display:none">
+    <div class="stats-strip" style="margin:0;border-radius:0;border-left:none;border-right:none;border-top:none">
+      <div class="stat-cell">
+        <div class="stat-cell-label">Turns</div>
+        <div class="stat-cell-value" id="cstat-turns">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Tokens</div>
+        <div class="stat-cell-value" id="cstat-tokens">—</div>
+        <div class="token-breakdown" id="cstat-tok-breakdown" style="display:none">
+          <div class="token-chip"><span>in </span><span id="cstat-tok-in">—</span></div>
+          <div class="token-chip"><span>ctx </span><span id="cstat-tok-ctx">—</span></div>
+          <div class="token-chip"><span>out </span><span id="cstat-tok-out">—</span></div>
+        </div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Searches</div>
+        <div class="stat-cell-value" id="cstat-searches">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Cost</div>
+        <div class="stat-cell-value" id="cstat-cost">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Model</div>
+        <div class="stat-cell-value small" id="cstat-model">—</div>
+      </div>
+    </div>
+  </div>
+  <!-- Hero strip — same pattern as Ask and Pipeline -->
+  <div class="pipeline-hero" id="chat-hero" style="padding:18px 0 14px;flex-shrink:0">
+    <div class="pipeline-hero-inner">
+      <div class="pipeline-hero-text">
+        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Research Chat</div>
+        <h2 class="pipeline-hero-title" style="font-size:18px;margin-bottom:8px">A research assistant that searches the web and remembers what you discussed</h2>
+        <div class="pipeline-hero-steps">
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
+        </div>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
+          Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-thread" id="chat-thread">
+  </div>
+  <div class="chat-composer">
+    <div class="chat-composer-inner">
+      <select id="chat-model-select">
+        <option value="">Loading models…</option>
+      </select>
+      <div class="lc-toggle" onclick="_toggleSearch(this,'chat-search-track','chat-search-label','chat-send-btn')" title="Toggle You.com Web Search">
+        <div class="lc-track on" id="chat-search-track"><div class="lc-thumb"></div></div>
+        <span id="chat-search-label" style="font-size:11.5px;font-weight:600;color:var(--primary)">You.com Web Search</span>
+      </div>
+      <input type="text" id="chat-input" placeholder="Message…" autocomplete="off">
+      <button id="chat-send-btn" onclick="chatSend()">Send →</button>
+      <button id="chat-stop-btn" onclick="chatStop()" style="display:none">Stop ▪</button>
+      <button id="chat-new-btn" onclick="chatNew()">New Chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Pipeline tab ───────────────────────────────────────────────────── -->
+<div id="tab-pipeline" class="tab-panel">
+
+  <!-- Hero description -->
+  <div class="pipeline-hero">
+    <div class="pipeline-hero-inner">
+      <div class="pipeline-hero-text">
+        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Sales Intelligence Pipeline</div>
+        <h2 class="pipeline-hero-title">From company name to personalized outreach, in seconds</h2>
+        <div class="pipeline-hero-steps">
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Live web intel</strong> — You.com Web Search fetches fresh news, funding, and hiring signals for each account</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Sales signals</strong> — a Parasail LLM distills findings into bullets tied to Parasail's value prop</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Pitch email</strong> — a second LLM drafts a personalized cold outreach grounded in that context</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input form -->
+  <div class="pipeline-form-wrap">
+    <div class="pipeline-form">
+
+      <!-- Step 1: Target accounts -->
+      <div class="pipeline-step-card">
+        <div class="pipeline-step-card-header">
+          <div class="pipeline-step-num-badge">1</div>
+          <div>
+            <div class="pipeline-step-card-title">Target Accounts</div>
+            <div class="pipeline-step-card-sub">One company per line</div>
+          </div>
+        </div>
+        <textarea id="pipeline-companies" rows="4"
+          placeholder="Salesforce&#10;HubSpot&#10;Outreach"
+          class="pipeline-textarea"></textarea>
+      </div>
+
+      <!-- Step 2: Model selection -->
+      <div class="pipeline-step-card">
+        <div class="pipeline-step-card-header">
+          <div class="pipeline-step-num-badge">2</div>
+          <div style="flex:1">
+            <div class="pipeline-step-card-title">Choose Models</div>
+            <div class="pipeline-step-card-sub">Powered by Parasail</div>
+          </div>
+        </div>
+        <div class="pipeline-models">
+          <div>
+            <label class="pipeline-field-label">Sales signals LLM</label>
+            <select id="pipeline-research-model" class="pipeline-select">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+          <div>
+            <label class="pipeline-field-label">Pitch email LLM</label>
+            <select id="pipeline-email-model" class="pipeline-select">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Run -->
+      <button id="pipeline-run-btn" onclick="runPipeline()" class="pipeline-run-card" style="border:none;font-family:inherit">
+        <div class="pipeline-step-num-badge" style="background:rgba(255,255,255,.25);margin-bottom:4px">3</div>
+        <div class="pipeline-run-label">Run Pipeline</div>
+        <div class="pipeline-run-sub">You.com + Parasail</div>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Pipeline stats strip (hidden until pipeline runs) -->
+  <div id="pipeline-stats-strip" class="stats-strip" style="display:none;max-width:860px;margin:0 auto 24px;padding:0 24px">
+    <div class="stat-cell">
+      <div class="stat-cell-label">Searches</div>
+      <div class="stat-cell-value" id="pstat-searches">0</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Tokens In</div>
+      <div class="stat-cell-value" id="pstat-tokens-in">0</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Tokens Out</div>
+      <div class="stat-cell-value" id="pstat-tokens-out">0</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Est. Cost</div>
+      <div class="stat-cell-value" id="pstat-cost">$0.000000</div>
+    </div>
+  </div>
+
+  <div id="pipeline-results" style="max-width:860px;margin:0 auto 60px;padding:0 24px"></div>
+</div>
+
+<!-- ── About tab ──────────────────────────────────────────────────────── -->
+<div id="tab-about" class="tab-panel">
+  <div class="about-content" style="max-width:720px">
+
+    <div style="margin-bottom:28px">
+      <h2 style="margin-bottom:6px">How It Works</h2>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin:0 0 14px">
+        This demo is powered by two APIs: <strong>You.com Web Search</strong> for live web intel and <strong>Parasail</strong> for
+        <span class="tip" data-tip="Running a trained model to generate a response. Separate from training, which teaches the model in the first place.">inference</span>
+        on
+        <span class="tip" data-tip="Models whose weights are publicly released — anyone can run, fine-tune, and host them. Examples: Llama, Qwen, DeepSeek, Gemma.">open-weight models</span>.
+        Each section below shows what the API does, how to call it, and what it costs.
+      </p>
+    </div>
+
+    <!-- Knowledge Cutoff section (first, starts expanded) -->
+    <div class="about-section" id="as-knowledge">
+      <div class="about-section-header" onclick="toggleAboutSection('as-knowledge', this)">
+        <span class="about-section-arrow">▾</span>
+        <div>
+          <div class="about-section-title">🌐 You.com Web Search Powers Open-Weight Models</div>
+          <div class="about-section-preview">Open-weight models know the world up to their training cutoff · You.com Web Search fills the gap with live web intel</div>
+        </div>
+      </div>
+      <div class="about-section-body">
+        <p style="font-size:13.5px;line-height:1.75;color:var(--text-2);margin-bottom:20px">
+          Models like GPT-4 and Claude are proprietary; you access them only through the vendor's API.
+          Open-weight models (Llama, Qwen, DeepSeek, Gemma) have publicly released weights, so inference providers like Parasail can host and serve them through an OpenAI-compatible API, with full model choice at a fraction of the cost.
+          But they share one hard constraint: a <strong style="color:var(--text)">knowledge cutoff</strong>. Training ends on a fixed date, and everything after it is a blank.
+          <strong style="color:var(--text)">You.com Web Search is what fills that gap</strong>, fetching live web results at query time so the model can reason about the world as it is today, not as it was when training stopped.
+        </p>
+
+        <!-- Timeline Visual: Jan 2023 → Jul 2026 (42 months total) -->
+        <!-- Percentages: Dec '23 = 26.2%, Jun '24 = 40.5%, Oct '24 = 50%, Nov '24 = 52.4% -->
+        <div style="position:relative;margin:8px 0 40px">
+
+          <!-- Gap overlay: Nov 2024 → Today -->
+          <div style="position:absolute;top:0;bottom:40px;left:52.4%;right:0;background:rgba(234,88,12,0.07);border-left:2px dashed #f97316;border-radius:0 6px 6px 0;pointer-events:none;z-index:0"></div>
+
+          <!-- Gap zone label (centered in the gap: midpoint ≈ 76%) -->
+          <div style="position:absolute;top:16px;left:76%;transform:translateX(-50%);text-align:center;z-index:2;pointer-events:none">
+            <div style="font-size:10.5px;font-weight:700;color:#ea580c;letter-spacing:0.05em;white-space:nowrap">KNOWLEDGE GAP</div>
+            <div style="font-size:10px;color:#ea580c;opacity:0.65;margin-top:2px">~20 months</div>
+          </div>
+
+          <!-- Today marker (right edge) -->
+          <div style="position:absolute;top:0;bottom:40px;right:0;width:2px;background:#ef4444;z-index:2"></div>
+
+          <!-- Model rows -->
+          <!-- Llama 3.1 — Meta — cutoff Dec 2023 → 26.2% -->
+          <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
+            <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Llama 3.1</div>
+              <div style="font-size:10.5px;color:var(--muted)">Meta · Dec 2023</div>
+            </div>
+            <div style="flex:1;height:34px;position:relative">
+              <div style="position:absolute;left:0;top:9px;width:26.2%;height:16px;border-radius:8px;background:#3b82f6;opacity:0.82"></div>
+              <div style="position:absolute;left:26.2%;top:12px;width:10px;height:10px;border-radius:50%;background:#3b82f6;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+            </div>
+          </div>
+
+          <!-- Gemma 2 — Google — cutoff Jun 2024 → 40.5% -->
+          <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
+            <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Gemma 2</div>
+              <div style="font-size:10.5px;color:var(--muted)">Google · Jun 2024</div>
+            </div>
+            <div style="flex:1;height:34px;position:relative">
+              <div style="position:absolute;left:0;top:9px;width:40.5%;height:16px;border-radius:8px;background:#22c55e;opacity:0.82"></div>
+              <div style="position:absolute;left:40.5%;top:12px;width:10px;height:10px;border-radius:50%;background:#22c55e;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+            </div>
+          </div>
+
+          <!-- Qwen 2.5 — Alibaba — cutoff Oct 2024 → 50% -->
+          <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
+            <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Qwen 2.5</div>
+              <div style="font-size:10.5px;color:var(--muted)">Alibaba · Oct 2024</div>
+            </div>
+            <div style="flex:1;height:34px;position:relative">
+              <div style="position:absolute;left:0;top:9px;width:50%;height:16px;border-radius:8px;background:#f97316;opacity:0.82"></div>
+              <div style="position:absolute;left:50%;top:12px;width:10px;height:10px;border-radius:50%;background:#f97316;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+            </div>
+          </div>
+
+          <!-- DeepSeek V3 — DeepSeek — cutoff Nov 2024 → 52.4% -->
+          <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
+            <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">DeepSeek V3</div>
+              <div style="font-size:10.5px;color:var(--muted)">DeepSeek · Nov 2024</div>
+            </div>
+            <div style="flex:1;height:34px;position:relative">
+              <div style="position:absolute;left:0;top:9px;width:52.4%;height:16px;border-radius:8px;background:#06b6d4;opacity:0.82"></div>
+              <div style="position:absolute;left:52.4%;top:12px;width:10px;height:10px;border-radius:50%;background:#06b6d4;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+            </div>
+          </div>
+
+          <!-- Time axis -->
+          <div style="display:flex;margin-left:142px;position:relative;z-index:1;margin-top:6px;border-top:1px solid var(--border-lt);padding-top:6px">
+            <div style="flex:1;position:relative;height:24px">
+              <span style="position:absolute;left:0;font-size:10px;color:var(--muted);transform:translateX(-50%)">Jan '23</span>
+              <span style="position:absolute;left:26.2%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Dec '23</span>
+              <span style="position:absolute;left:40.5%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Jun '24</span>
+              <span style="position:absolute;left:52.4%;font-size:10px;color:#ea580c;font-weight:600;transform:translateX(-50%);white-space:nowrap">Nov '24</span>
+              <span style="position:absolute;right:0;font-size:10px;color:#ef4444;font-weight:700;transform:translateX(50%)">Jul '26</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- You.com Search bridge -->
+        <div style="display:flex;align-items:flex-start;gap:12px;background:var(--primary-100);border:1px solid rgba(108,91,255,0.18);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:20px;line-height:1;margin-top:1px">🔎</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px">You.com Web Search bridges the gap</div>
+            <div style="font-size:13px;color:var(--text-2);line-height:1.65">
+              Instead of relying on a model's frozen training snapshot, this demo fetches live web results at query time
+              and injects them into the prompt context. The model reasons over <em>today's</em> news, not November 2024's.
+            </div>
+          </div>
+        </div>
+
+        <!-- Before / After cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 14px">
+            <div style="font-size:12.5px;font-weight:700;color:#dc2626;margin-bottom:6px">❌ Without You.com Web Search</div>
+            <div style="font-size:12.5px;color:var(--text-2);line-height:1.65">Model draws from training data only. Events after the cutoff produce hallucinations or "I don't have that information."</div>
+          </div>
+          <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 14px">
+            <div style="font-size:12.5px;font-weight:700;color:#16a34a;margin-bottom:6px">✅ With You.com Web Search</div>
+            <div style="font-size:12.5px;color:var(--text-2);line-height:1.65">You.com fetches live results at query time; the model reasons over current news and recent events — not a stale snapshot.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- You.com APIs collapsible -->
+    <div class="about-section collapsed" id="as-ydc">
+      <div class="about-section-header" onclick="toggleAboutSection('as-ydc', this)">
+        <span class="about-section-arrow">▸</span>
+        <div>
+          <div class="about-section-title">You.com APIs</div>
+          <div class="about-section-preview">Search API · Research API · live web intel · cited answers</div>
+        </div>
+      </div>
+      <div class="about-section-body">
+
+        <!-- ── Search API ─────────────────────────────────────────── -->
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+          <div class="models-section-label" style="margin-bottom:0">Search API</div>
+          <div style="font-size:11.5px;color:var(--muted)">GET ydc-index.io/v1/search · $0.005 / call</div>
+        </div>
+        <p style="font-size:13px;color:var(--text-2);line-height:1.6;margin:0 0 12px">
+          Returns live news + web results in a single call — no scraping, no stale index. Used in this demo to ground every LLM step in fresh company signals. Add <code style="font-size:11.5px;background:var(--band);padding:1px 5px;border-radius:4px"><span class="tip" data-tip="Fetches the full text of each result page at query time — richer context than the index snippet alone. Billed per URL beyond the first 10.">livecrawl</span>=web</code> to get full page markdown, not just snippets.
+        </p>
+
+        <div style="margin-bottom:8px">
+          <div class="code-block-wrap">
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+            <div class="code-block">import requests
+
+resp = requests.get(
+    <span class="cs">"https://ydc-index.io/v1/search"</span>,
+    headers={<span class="cs">"X-API-Key"</span>: YDC_API_KEY},
+    params={
+        <span class="cs">"query"</span>:            <span class="cs">"Salesforce AI news 2026"</span>,
+        <span class="cs">"num_web_results"</span>:   <span class="cn">5</span>,
+        <span class="cs">"livecrawl"</span>:         <span class="cs">"web"</span>,       <span class="cc"># optional — full page markdown</span>
+        <span class="cs">"livecrawl_formats"</span>: <span class="cs">"markdown"</span>,
+    },
+    timeout=<span class="cn">20</span>,
+)
+data = resp.json()
+news = data[<span class="cs">"results"</span>][<span class="cs">"news"</span>]  <span class="cc"># [{title, description, url, page_age}, ...]</span>
+web  = data[<span class="cs">"results"</span>][<span class="cs">"web"</span>]   <span class="cc"># [{title, url, snippets, contents.markdown}, ...]</span></div>
+          </div>
+        </div>
+
+        <!-- Collapsible example response -->
+        <div style="margin-bottom:20px">
+          <div style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:12px;color:var(--primary);font-weight:600;padding:4px 0"
+               onclick="(function(btn){var box=btn.nextElementSibling;var open=box.style.display!=='none';box.style.display=open?'none':'block';btn.querySelector('span.arr').textContent=open?'▸':'▾';btn.querySelector('span.lbl').textContent=open?'Show example response':'Hide example response';})(this)">
+            <span class="arr">▸</span><span class="lbl">Show example response</span>
+          </div>
+          <div style="display:none;margin-top:6px">
+            <div class="code-block-wrap">
+              <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+              <div class="code-block" style="font-size:11.5px">{
+  <span class="cs">"results"</span>: {
+    <span class="cs">"news"</span>: [
+      {
+        <span class="cs">"title"</span>:       <span class="cs">"Salesforce Launches Agentforce 3 with Real-Time AI"</span>,
+        <span class="cs">"description"</span>: <span class="cs">"Salesforce unveiled Agentforce 3, expanding autonomous AI agents..."</span>,
+        <span class="cs">"url"</span>:         <span class="cs">"https://techcrunch.com/2026/06/12/salesforce-agentforce-3"</span>,
+        <span class="cs">"page_age"</span>:    <span class="cs">"2026-06-12T09:00:00Z"</span>
+      }
+    ],
+    <span class="cs">"web"</span>: [
+      {
+        <span class="cs">"title"</span>:    <span class="cs">"Salesforce AI Platform — Einstein Overview"</span>,
+        <span class="cs">"url"</span>:      <span class="cs">"https://www.salesforce.com/artificial-intelligence/"</span>,
+        <span class="cs">"snippets"</span>: [<span class="cs">"Einstein Copilot now supports multi-agent orchestration..."</span>],
+        <span class="cs">"page_age"</span>: <span class="cs">"2026-05-20T00:00:00Z"</span>,
+        <span class="cs">"contents"</span>: {
+          <span class="cc">// present when livecrawl=web — full page prose, markdown-stripped</span>
+          <span class="cs">"markdown"</span>: <span class="cs">"## Salesforce AI\n\nEinstein Copilot brings generative AI to every..."</span>
+        }
+      }
+    ]
+  },
+  <span class="cs">"metadata"</span>: {
+    <span class="cs">"search_uuid"</span>: <span class="cs">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+    <span class="cs">"query"</span>:       <span class="cs">"Salesforce AI news 2026"</span>,
+    <span class="cs">"latency"</span>:     <span class="cn">387</span>
+  }
+}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <table class="models-pricing-table">
+            <thead><tr><th>Tier</th><th>Cost</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Search (web + news)</td><td>$5.00 / 1k calls</td><td style="color:var(--muted)">$0.005 per call</td></tr>
+              <tr><td>Livecrawl</td><td>$1.00 / 1k URLs</td><td style="color:var(--muted)">First 10 URLs per call free</td></tr>
+            </tbody>
+          </table>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px">A typical grounded Q&amp;A triggers 2–3 searches = ~$0.015. That's roughly 65 questions for $1.</div>
+        </div>
+
+        <!-- ── Divider ─────────────────────────────────────────────── -->
+        <div style="display:flex;align-items:center;gap:12px;margin:24px 0 20px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Research API</div>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+
+        <!-- ── Research API ───────────────────────────────────────── -->
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+          <div class="models-section-label" style="margin-bottom:0">Research API</div>
+          <div style="font-size:11.5px;color:var(--muted)">POST api.you.com/v1/research · from $0.012 / call</div>
+        </div>
+        <p style="font-size:13px;color:var(--text-2);line-height:1.6;margin:0 0 12px">
+          Goes beyond raw results — runs multiple searches autonomously, reads through sources, and synthesizes a <strong>cited, natural-language answer</strong>. You get a markdown response with inline citations <code style="font-size:11.5px;background:var(--band);padding:1px 5px;border-radius:4px">[[1, 2]]</code> plus the source list. Depth is controlled by the <code style="font-size:11.5px;background:var(--band);padding:1px 5px;border-radius:4px">research_effort</code> tier.
+        </p>
+
+        <div style="margin-bottom:16px">
+          <div class="code-block-wrap">
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+            <div class="code-block">import requests
+
+resp = requests.post(
+    <span class="cs">"https://api.you.com/v1/research"</span>,
+    headers={<span class="cs">"X-API-Key"</span>: YDC_API_KEY},
+    json={
+        <span class="cs">"input"</span>:           <span class="cs">"What are the latest AI infrastructure trends in enterprise sales?"</span>,
+        <span class="cs">"research_effort"</span>: <span class="cs">"standard"</span>,  <span class="cc"># lite | standard | deep | exhaustive</span>
+    },
+)
+data    = resp.json()
+answer  = data[<span class="cs">"content"</span>]  <span class="cc"># markdown with inline citations [[1]]</span>
+sources = data[<span class="cs">"sources"</span>]  <span class="cc"># [{url, title, snippet}, ...]</span></div>
+          </div>
+        </div>
+
+        <div>
+          <table class="models-pricing-table">
+            <thead><tr><th>Effort tier</th><th>Cost / call</th><th>Latency</th><th>Best for</th></tr></thead>
+            <tbody>
+              <tr><td>Lite</td><td>$0.012</td><td style="color:var(--muted)">&lt;10s</td><td style="color:var(--muted)">Quick lookups, high volume</td></tr>
+              <tr><td>Standard</td><td>$0.050</td><td style="color:var(--muted)">10–30s</td><td style="color:var(--muted)">Most production use</td></tr>
+              <tr><td>Deep</td><td>$0.100</td><td style="color:var(--muted)">&lt;2 min</td><td style="color:var(--muted)">Complex, multi-faceted questions</td></tr>
+              <tr><td>Exhaustive</td><td>$0.450</td><td style="color:var(--muted)">&lt;5 min</td><td style="color:var(--muted)">Comprehensive analysis</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Parasail collapsible -->
+    <div class="about-section collapsed" id="as-models">
+      <div class="about-section-header" onclick="toggleAboutSection('as-models', this)">
+        <span class="about-section-arrow">▸</span>
+        <div>
+          <div class="about-section-title">Parasail — Serverless LLM Inference</div>
+          <div class="about-section-preview">OpenAI-compatible API · open-weight models · per-1M token rates</div>
+        </div>
+      </div>
+      <div class="about-section-body">
+        <div style="margin-bottom:20px">
+          <div class="models-section-label" style="margin-bottom:10px">Initialise the client</div>
+          <div class="code-block-wrap">
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+            <div class="code-block">import os
+from openai import OpenAI
+
+<span class="cc"># Point the standard OpenAI SDK at Parasail — no other changes needed</span>
+client = OpenAI(
+    api_key=os.environ[<span class="cs">"PARASAIL_API_KEY"</span>],
+    base_url=<span class="cs">"https://api.parasail.io/v1"</span>,
+)</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div class="models-section-label" style="margin-bottom:10px">Discover available models</div>
+          <div class="code-block-wrap">
+            <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+            <div class="code-block" id="about-list-models-snippet"><span style="color:var(--muted)">Loading…</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="models-section-label" style="margin-bottom:10px">Serverless pricing (per 1M <span class="tip" data-tip="The chunks a model reads and writes — roughly ¾ of a word each. Cost is always measured per million tokens, for both input (prompt) and output (response).">tokens</span>)</div>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">
+            The table below covers the 5 models used in this demo. Parasail hosts many more — run the discovery snippet above to see everything available on your key.
+          </p>
+          <table class="models-pricing-table" style="margin-bottom:10px">
+            <thead><tr><th>Model</th><th>Provider</th><th>Input $/1M</th><th>Output $/1M</th></tr></thead>
+            <tbody id="about-pricing-tbody">
+              <tr><td colspan="4" style="color:var(--muted)">Loading…</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:12px;color:var(--muted);margin:0">
+            You.com Web Search: $5.00 / 1,000 queries ($0.005 per call). Livecrawl: first 10 URLs included; excess at $1 / 1,000 URLs.
+          </p>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">A full pipeline run (search + brief + email) costs roughly $0.003–$0.005 total — about 300 accounts per dollar.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Config collapsible -->
+    <div class="about-section collapsed" id="as-config">
+      <div class="about-section-header" onclick="toggleAboutSection('as-config', this)">
+        <span class="about-section-arrow">▾</span>
+        <div>
+          <div class="about-section-title">Config</div>
+          <div class="about-section-preview">Search loop limits · token caps · timeouts · system prompt</div>
+        </div>
+      </div>
+      <div class="about-section-body" id="config-body">
+        <p style="color:var(--muted);font-size:13px">Loading…</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Cost popup (shared, positioned by JS) -->
+<div id="costPopup">
+  <span class="popup-close" onclick="hideCostPopup()">✕</span>
+  <div id="costPopupContent"></div>
+</div>
+
+<script>
+let _lastDoneEvent = null;
+let _abortCtrl = null;
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['about','ask','chat','pipeline'][i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'about') loadConfig();
+  if (name === 'ask' && !document.getElementById('question').value) {
+    document.getElementById('question').value = 'Who won the 2026 FIFA World Cup semifinals and who are the finalists?';
+  }
+}
+
+function toggleAboutSection(id, headerEl) {
+  const section = document.getElementById(id);
+  const collapsed = section.classList.toggle('collapsed');
+  const arrow = (headerEl || section.previousElementSibling)?.querySelector('.about-section-arrow');
+  if (arrow) arrow.textContent = collapsed ? '▸' : '▾';
+}
+
+// ── Load config ────────────────────────────────────────────────────────────
+let _configLoaded = false;
+async function loadConfig() {
+  if (_configLoaded) return;
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    _configLoaded = true;
+    renderConfig(cfg);
+  } catch(e) {
+    document.getElementById('config-body').innerHTML =
+      `<p style="color:var(--red);font-size:13px">Failed to load config: ${e.message}</p>`;
+  }
+}
+
+function renderConfig(cfg) {
+  function cfgRow(param, value, what, when) {
+    return `<tr>
+      <td style="font-weight:600"><code>${param}</code></td>
+      <td style="font-variant-numeric:tabular-nums;font-weight:600">${value}</td>
+      <td style="color:var(--text-2)">${what}</td>
+      <td style="color:var(--text-2)">${when}</td>
+    </tr>`;
+  }
+
+  const loopRows = [
+    cfgRow('MAX_TOOL_ROUNDS', cfg.max_tool_rounds,
+      'Hard cap on LLM ↔ tool-use round-trips before forcing a final answer.',
+      'Lower to 3–5 for latency-sensitive use cases. Most queries finish in 1–3 rounds.'),
+    cfgRow('MAX_TOKENS', cfg.max_tokens,
+      'Max output tokens per LLM call. Controls answer length ceiling.',
+      'Raise for detailed multi-section answers; increases cost on long queries.'),
+  ];
+
+  const timeoutRows = [
+    cfgRow('SEARCH_TIMEOUT_SECONDS', cfg.search_timeout_s + 's',
+      'HTTP timeout for each You.com Search API call.',
+      'Increase only if You.com latency spikes in your region.'),
+    cfgRow('MAX_LIVECRAWL_CHARS', cfg.max_livecrawl_chars.toLocaleString(),
+      'Per-result character truncation for livecrawl content injected into context.',
+      'Lower to reduce context size and cost; raise for richer detail on data-heavy pages.'),
+    cfgRow('LIVECRAWL_STRIPDOWN', 'Always on',
+      'When livecrawl is enabled, <code>_clean_markdown()</code> strips headers, links, bullet markers, and nav-length lines before truncation — delivering clean prose to the brief LLM instead of raw markdown.',
+      'Hardcoded backend behavior (pipeline_agent.py). Disable by removing the <code>_clean_markdown()</code> call in <code>enrich()</code> if you want to pass raw crawl content to the model.'),
+    cfgRow('LLM API timeout', cfg.llm_api_timeout_s + 's',
+      'HTTP timeout for each Parasail API call (set on the OpenAI client).',
+      'Raise for very large models that are slow to respond.'),
+  ];
+
+  document.getElementById('config-body').innerHTML = `
+    <div class="config-section-label">Search Loop</div>
+    <table class="config-table">
+      <thead><tr>
+        <th style="width:22%">Parameter</th>
+        <th style="width:10%">Value</th>
+        <th style="width:34%">What it does</th>
+        <th>When to change</th>
+      </tr></thead>
+      <tbody>${loopRows.join('')}</tbody>
+    </table>
+
+    <div class="config-section-label">Timeouts &amp; Limits</div>
+    <table class="config-table">
+      <thead><tr>
+        <th style="width:22%">Parameter</th>
+        <th style="width:10%">Value</th>
+        <th style="width:34%">What it does</th>
+        <th>When to change</th>
+      </tr></thead>
+      <tbody>${timeoutRows.join('')}</tbody>
+    </table>
+
+    <div class="config-section-label">System Prompt</div>
+    <div class="config-prompt">${cfg.system_prompt}</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">
+      Defined in <code>search_tool.py → SYSTEM_PROMPT</code>. Identical to core grounding repo.
+      Modify to change retrieval behavior, citation style, or search aggressiveness.
+    </p>
+  `;
+}
+
+// ── Load models ────────────────────────────────────────────────────────────
+const _modelsMap = {}; // key → {display_name, pricing}
+
+async function loadModels() {
+  try {
+    const res = await fetch('/api/models');
+    const data = await res.json();
+    data.models.forEach(m => { _modelsMap[m.key] = m; });
+    const sorted = [...data.models].sort((a, b) => a.display_name.localeCompare(b.display_name));
+    ['model-select', 'chat-model-select', 'pipeline-research-model', 'pipeline-email-model'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '';
+      sorted.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.key;
+        opt.textContent = `${m.display_name} — ${m.provider}`;
+        sel.appendChild(opt);
+      });
+    });
+  } catch(e) {
+    document.getElementById('model-select').innerHTML = '<option>Error loading models</option>';
+  }
+}
+
+// ── Ask ────────────────────────────────────────────────────────────────────
+function ask() {
+  const model = document.getElementById('model-select').value;
+  const question = document.getElementById('question').value.trim();
+  if (!question) return;
+
+  if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
+
+  const btn = document.getElementById('ask-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Searching…';
+  stopBtn.style.display = 'inline-block';
+
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+
+  _abortCtrl = new AbortController();
+
+  fetch('/api/ask', {
+    signal: _abortCtrl.signal,
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({model, question, search_enabled: document.getElementById('ask-search-track').classList.contains('on')}),
+  }).then(res => {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    function pump() {
+      reader.read().then(({done, value}) => {
+        if (done) { finalize(); return; }
+        buf += decoder.decode(value, {stream: true});
+        const lines = buf.split('\n\n');
+        buf = lines.pop();
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            try { handleEvent(JSON.parse(line.slice(6))); } catch(e) {}
+          }
+        });
+        pump();
+      }).catch(e => { if (e.name !== 'AbortError') throw e; });
+    }
+    pump();
+  }).catch(e => {
+    if (e.name !== 'AbortError') {
+      results.innerHTML = `<div class="placeholder"><h3>Error</h3>${e.message}</div>`;
+    }
+    finalize();
+  });
+}
+
+// ── Markdown renderer ──────────────────────────────────────────────────────
+function renderMarkdown(text) {
+  const inline = s => s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\[(\d+)\]/g, '<sup>[$1]</sup>');
+
+  const lines = text.split('\n');
+  let html = '', inList = false, listTag = '', inTable = false, tableRows = [];
+
+  const flushList = () => { if (inList) { html += `</${listTag}>`; inList = false; } };
+  const flushTable = () => {
+    if (!inTable) return;
+    const [head, , ...body] = tableRows;
+    const cols = head.split('|').map(c => c.trim()).filter(Boolean);
+    html += '<table><thead><tr>' + cols.map(c => `<th>${inline(c)}</th>`).join('') + '</tr></thead><tbody>';
+    body.forEach(row => {
+      const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+      html += '<tr>' + cells.map(c => `<td>${inline(c)}</td>`).join('') + '</tr>';
+    });
+    html += '</tbody></table>';
+    inTable = false; tableRows = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes('|')) { flushList(); inTable = true; tableRows.push(line); continue; }
+    if (inTable) { flushTable(); }
+    const hm = line.match(/^(#{1,3})\s+(.+)/);
+    if (hm) { flushList(); html += `<h${hm[1].length}>${inline(hm[2])}</h${hm[1].length}>`; continue; }
+    if (/^[-*]\s/.test(line)) {
+      if (!inList || listTag !== 'ul') { flushList(); html += '<ul>'; inList = true; listTag = 'ul'; }
+      html += `<li>${inline(line.replace(/^[-*]\s/,''))}</li>`; continue;
+    }
+    if (/^\d+\.\s/.test(line)) {
+      if (!inList || listTag !== 'ol') { flushList(); html += '<ol>'; inList = true; listTag = 'ol'; }
+      html += `<li>${inline(line.replace(/^\d+\.\s/,''))}</li>`; continue;
+    }
+    flushList();
+    if (line.trim() === '') { html += '<p></p>'; continue; }
+    html += `<p>${inline(line)}</p>`;
+  }
+  flushList(); flushTable();
+  return html;
+}
+
+// ── Search toggle ──────────────────────────────────────────────────────────
+function _toggleSearch(el, trackId, labelId, btnId) {
+  const track = document.getElementById(trackId);
+  const label = document.getElementById(labelId);
+  const btn   = document.getElementById(btnId);
+  const on = track.classList.toggle('on');
+  label.style.color = on ? 'var(--primary)' : 'var(--muted)';
+  if (btn) btn.textContent = on ? 'Search →' : 'Ask →';
+}
+
+// ── Section toggle ─────────────────────────────────────────────────────────
+function toggleSection(id, headerEl) {
+  const block = document.getElementById(id);
+  if (!block) return;
+  const collapsed = block.classList.toggle('collapsed');
+  const arrow = (headerEl || block.previousElementSibling)?.querySelector('.section-arrow');
+  if (arrow) arrow.textContent = collapsed ? '▸' : '▾';
+}
+
+// ── DOM refs ───────────────────────────────────────────────────────────────
+let traceEl, answerEl, sourcesEl;
+
+function handleEvent(ev) {
+  const results = document.getElementById('results');
+
+  if (ev.event === 'init') {
+    results.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <div class="model-pill">⚡ ${ev.display_name}</div>
+        <button class="pipe-code-btn" title="View code & prompt" onclick="openAskDrawer(this)">Code &amp; Prompt</button>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="stats-strip" id="stats-strip">
+        <div class="stat-cell">
+          <div class="stat-cell-label">Tokens</div>
+          <div class="stat-cell-value loading" id="stat-tokens">—</div>
+          <div class="token-breakdown" id="stat-token-breakdown" style="display:none">
+            <div class="token-chip"><span>in </span><span id="tok-input">—</span></div>
+            <div class="token-chip"><span>ctx </span><span id="tok-ctx">—</span></div>
+            <div class="token-chip"><span>out </span><span id="tok-output">—</span></div>
+          </div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Searches</div>
+          <div class="stat-cell-value loading" id="stat-searches">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Cost</div>
+          <div class="stat-cell-value loading" id="stat-cost">—</div>
+          <div class="cost-hint" id="stat-cost-hint" style="display:none">click to expand</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Latency</div>
+          <div class="stat-cell-value loading" id="stat-latency">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">TTFC</div>
+          <div class="stat-cell-value loading" id="stat-ttfc">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Model</div>
+          <div class="stat-cell-value loading small" id="stat-model">—</div>
+        </div>
+      </div>
+
+      <!-- Searches section -->
+      <div class="section-block" id="sec-searches">
+        <div class="section-header" onclick="toggleSection('sec-searches', this)">
+          <div class="section-title">
+            🔍 Searches
+            <span class="section-badge" id="search-count-badge">0</span>
+          </div>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="section-body-inner">
+            <div id="trace" class="trace"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generating indicator — shown between last search and first answer token -->
+      <div id="generating-indicator" style="display:none;padding:12px 20px;display:none;align-items:center;gap:10px;color:var(--muted);font-size:13px">
+        <span class="spinner"></span>
+        Generating response…
+      </div>
+
+      <!-- Response section -->
+      <div class="section-block" id="sec-response" style="display:none">
+        <div class="section-header" onclick="toggleSection('sec-response', this)">
+          <div class="section-title">💬 Response</div>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="section-body-inner">
+            <div id="answer" class="answer-inner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sources section -->
+      <div class="section-block" id="sec-sources" style="display:none">
+        <div class="section-header" onclick="toggleSection('sec-sources', this)">
+          <div class="section-title">
+            📎 Sources
+            <span class="section-badge" id="source-count-badge">0</span>
+          </div>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="section-body-inner" id="sources"></div>
+        </div>
+      </div>
+
+      <!-- Raw output section -->
+      <div class="section-block collapsed" id="sec-raw" style="display:none">
+        <div class="section-header" onclick="toggleSection('sec-raw', this)">
+          <div class="section-title">🗒 Raw Output</div>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="section-body-inner">
+            <pre class="raw-pre" id="raw-pre"></pre>
+          </div>
+        </div>
+      </div>
+    `;
+    traceEl = document.getElementById('trace');
+    answerEl = document.getElementById('answer');
+    sourcesEl = document.getElementById('sources');
+  }
+
+  else if (ev.event === 'tool_call') {
+    const gi = document.getElementById('generating-indicator');
+    if (gi) gi.style.display = 'flex';
+    const searchCount = traceEl.querySelectorAll('.trace-item.search').length + 1;
+    const badge = document.getElementById('search-count-badge');
+    if (badge) badge.textContent = searchCount;
+    const statSearches = document.getElementById('stat-searches');
+    if (statSearches) { statSearches.textContent = searchCount; statSearches.classList.remove('loading'); }
+
+    const params = ev.params || {};
+    const meta = Object.entries(params).filter(([k,v]) => v).map(([k,v]) => `${k}=${v}`).join(' · ') || 'snippets';
+    traceEl.insertAdjacentHTML('beforeend', `
+      <div class="trace-item search">
+        <span class="trace-icon">🔍</span>
+        <div class="trace-content">
+          <div class="trace-query">${ev.query ? `"${ev.query}"` : `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-weight:400;font-size:12px">${(params.url||'').replace(/^https?:\/\//,'').substring(0,60)}${(params.url||'').length>67?'…':''}</span>`}</div>
+          <div class="trace-meta">Search ${ev.search_num} · round ${ev.round} · ${meta}</div>
+        </div>
+      </div>
+    `);
+  }
+
+  else if (ev.event === 'search_result') {
+    const lastSearch = traceEl.querySelector('.trace-item.search:last-child');
+    if (lastSearch) {
+      lastSearch.insertAdjacentHTML('afterend', `
+        <div class="trace-item result">
+          <span class="trace-icon">✓</span>
+          <div class="trace-content">
+            <div class="trace-query">${ev.result_count} results in ${Math.round(ev.latency_ms)}ms</div>
+            ${ev.sources.length ? `<div class="trace-meta">${ev.sources.slice(0,3).map(u => new URL(u).hostname).join(', ')}${ev.sources.length > 3 ? ` +${ev.sources.length-3} more` : ''}</div>` : ''}
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  else if (ev.event === 'answer') {
+    const gi = document.getElementById('generating-indicator');
+    if (gi) gi.style.display = 'none';
+    // Show response section
+    const secResponse = document.getElementById('sec-response');
+    if (secResponse) secResponse.style.display = 'block';
+    answerEl.innerHTML = ev.text ? renderMarkdown(ev.text) : '(no answer)';
+
+    // Populate raw section
+    const secRaw = document.getElementById('sec-raw');
+    const rawPre = document.getElementById('raw-pre');
+    if (secRaw && rawPre && ev.text) {
+      secRaw.style.display = 'block';
+      rawPre.textContent = ev.text;
+    }
+
+    // Collapse searches section
+    const secSearches = document.getElementById('sec-searches');
+    if (secSearches) secSearches.classList.add('collapsed');
+
+    // Scroll to response
+    if (secResponse) secResponse.scrollIntoView({behavior: 'smooth', block: 'start'});
+
+    // Sources
+    if (ev.sources && ev.sources.length) {
+      const secSources = document.getElementById('sec-sources');
+      if (secSources) secSources.style.display = 'block';
+      const badge = document.getElementById('source-count-badge');
+      if (badge) badge.textContent = ev.sources.length;
+      sourcesEl.innerHTML = ev.sources.map((url, i) => `
+        <div class="source-item">
+          <span class="source-num">[${i+1}]</span>
+          <a class="source-url" href="${url}" target="_blank" rel="noopener">${url}</a>
+        </div>
+      `).join('');
+    }
+  }
+
+  else if (ev.event === 'done') {
+    _lastDoneEvent = ev;
+    const s = ev.stats || {};
+    const tb = ev.token_breakdown || {};
+    const costs = ev.costs || {};
+    const pricing = ev.pricing || {};
+
+    const set = (id, val, fontSize) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = val;
+      el.classList.remove('loading');
+      if (fontSize) el.style.fontSize = fontSize;
+    };
+
+    // Tokens — total + sub-breakdown chips
+    if (s.tokens_used) {
+      set('stat-tokens', s.tokens_used.toLocaleString());
+      if (tb.input !== undefined) {
+        document.getElementById('tok-input').textContent  = tb.input.toLocaleString();
+        document.getElementById('tok-ctx').textContent    = tb.search_context.toLocaleString();
+        document.getElementById('tok-output').textContent = tb.output.toLocaleString();
+        document.getElementById('stat-token-breakdown').style.display = 'flex';
+      }
+    }
+
+    set('stat-searches', s.search_calls);
+    set('stat-latency', s.latency_ms ? (s.latency_ms/1000).toFixed(1) + 's' : '—');
+    set('stat-ttfc', s.connect_ms ? (s.connect_ms >= 1000 ? (s.connect_ms/1000).toFixed(1) + 's' : s.connect_ms.toLocaleString() + 'ms') : '—');
+    set('stat-model', s.model_confirmed || '—');
+
+    // Cost cell — clickable
+    if (costs.total !== undefined) {
+      const costEl = document.getElementById('stat-cost');
+      costEl.classList.remove('loading');
+      costEl.innerHTML = `<span class="cost-clickable" onclick="showCostPopup(this)">${costs.total_fmt || '$' + costs.total.toFixed(5)}</span>`;
+      const hintEl = document.getElementById('stat-cost-hint');
+      if (hintEl) hintEl.style.display = 'block';
+    }
+
+    // Post-answer plain-English summary
+    const answerEl = document.getElementById('answer');
+    if (answerEl) {
+      document.getElementById('answer-summary')?.remove();
+      const searches = s.search_calls || 0;
+      const tokens = s.tokens_used || 0;
+      const cost = costs.total_fmt || (costs.total !== undefined ? '$' + costs.total.toFixed(5) : null);
+      const searchOn = document.getElementById('ask-search-track')?.classList.contains('on');
+      const parts = [];
+      if (searchOn && searches > 0) parts.push(`<strong>${searches}</strong> You.com search${searches > 1 ? 'es' : ''}`);
+      else if (!searchOn) parts.push('no web search · model answered from training data only');
+      if (tokens) parts.push(`<strong>${tokens.toLocaleString()}</strong> tokens`);
+      if (cost) parts.push(`cost <strong>${cost}</strong>`);
+      if (parts.length) {
+        const div = document.createElement('div');
+        div.id = 'answer-summary';
+        div.className = 'answer-summary';
+        div.innerHTML = parts.join(' · ');
+        answerEl.parentElement.appendChild(div);
+      }
+    }
+  }
+
+  else if (ev.event === 'retrying') {
+    results.insertAdjacentHTML('beforeend',
+      `<div class="retrying-notice" id="retrying-notice">
+        <span class="spinner" style="border-top-color:var(--orange)"></span>
+        ${ev.message}
+      </div>`
+    );
+  }
+
+  else if (ev.event === 'error') {
+    document.getElementById('retrying-notice')?.remove();
+    results.insertAdjacentHTML('beforeend',
+      `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+        <span style="font-size:15px">✕</span>
+        ${ev.message}
+      </div>`
+    );
+  }
+}
+
+// ── Cost popup ─────────────────────────────────────────────────────────────
+function fmt(v) {
+  if (v === 0) return '$0.000000';
+  if (v < 0.001) return '$' + v.toFixed(6);
+  if (v < 0.01)  return '$' + v.toFixed(5);
+  return '$' + v.toFixed(4);
+}
+
+function showCostPopup(anchorEl) {
+  if (!_lastDoneEvent) return;
+  const tb = _lastDoneEvent.token_breakdown || {};
+  const s  = _lastDoneEvent.stats || {};
+  const p  = _lastDoneEvent.pricing || {};
+
+  const inRate     = (p.input_per_m  || 0) / 1_000_000;
+  const outRate    = (p.output_per_m || 0) / 1_000_000;
+  const searchRate = p.search_per_call || 0;
+
+  const inCost     = (tb.input  || 0) * inRate;
+  const outCost    = (tb.output || 0) * outRate;
+  const llmTotal   = inCost + outCost;
+  const searchCost = (s.search_calls || 0) * searchRate;
+  const livecrawl  = (_lastDoneEvent.costs || {}).livecrawl_overage || 0;
+  const total      = llmTotal + searchCost + livecrawl;
+
+  document.getElementById('costPopupContent').innerHTML = `
+    <h4>Cost Breakdown</h4>
+    <div class="popup-section">
+      <div class="popup-section-label">LLM Inference</div>
+      <div class="popup-line">
+        <span class="desc">${(tb.input||0).toLocaleString()} input tokens × $${p.input_per_m}/M</span>
+        <span class="val">${fmt(inCost)}</span>
+      </div>
+      <div class="popup-line">
+        <span class="desc">${(tb.output||0).toLocaleString()} output tokens × $${p.output_per_m}/M</span>
+        <span class="val">${fmt(outCost)}</span>
+      </div>
+      <div class="popup-line" style="font-weight:600;border-top:1px dashed var(--band);margin-top:4px;padding-top:4px">
+        <span class="desc">LLM subtotal</span>
+        <span class="val">${fmt(llmTotal)}</span>
+      </div>
+    </div>
+    <div class="popup-section">
+      <div class="popup-section-label">You.com Web Search</div>
+      <div class="popup-line">
+        <span class="desc">${s.search_calls||0} queries × $${(searchRate*1000).toFixed(3)}/1k</span>
+        <span class="val">${fmt(searchCost)}</span>
+      </div>
+      ${livecrawl > 0 ? `
+      <div class="popup-line">
+        <span class="desc">Livecrawl overage (URLs &gt; 10/call)</span>
+        <span class="val">${fmt(livecrawl)}</span>
+      </div>` : ''}
+    </div>
+    <div class="popup-total">
+      <span>Total</span>
+      <span>${fmt(total)}</span>
+    </div>
+    <div class="popup-footnote">
+      $${p.input_per_m}/M input · $${p.output_per_m}/M output · $${(searchRate*1000).toFixed(3)}/1k searches
+    </div>
+  `;
+
+  const popup = document.getElementById('costPopup');
+  popup.classList.add('visible');
+  const rect = anchorEl.getBoundingClientRect();
+  const pw = popup.offsetWidth, ph = popup.offsetHeight;
+  let left = rect.left + rect.width / 2 - pw / 2;
+  let top  = rect.bottom + 8;
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 8;
+  popup.style.left = left + 'px';
+  popup.style.top  = top  + 'px';
+}
+
+function showChatCostPopup(anchorEl) {
+  const p = _chatPricing || {};
+  const t = _chatTotals;
+  const searchRate = p.search_per_call || 0;
+
+  document.getElementById('costPopupContent').innerHTML = `
+    <h4>Session Cost Breakdown</h4>
+    <div class="popup-section">
+      <div class="popup-section-label">LLM Inference (${t.turns} turn${t.turns!==1?'s':''})</div>
+      <div class="popup-line">
+        <span class="desc">${t.input.toLocaleString()} input tokens × $${p.input_per_m||'?'}/M</span>
+        <span class="val">${fmt(t.input * (p.input_per_m||0) / 1_000_000)}</span>
+      </div>
+      <div class="popup-line">
+        <span class="desc">${t.output.toLocaleString()} output tokens × $${p.output_per_m||'?'}/M</span>
+        <span class="val">${fmt(t.output * (p.output_per_m||0) / 1_000_000)}</span>
+      </div>
+      <div class="popup-line" style="font-weight:600;border-top:1px dashed var(--band);margin-top:4px;padding-top:4px">
+        <span class="desc">LLM subtotal</span>
+        <span class="val">${fmt(t.llm)}</span>
+      </div>
+    </div>
+    <div class="popup-section">
+      <div class="popup-section-label">You.com Web Search</div>
+      <div class="popup-line">
+        <span class="desc">${t.searches} queries × $${(searchRate*1000).toFixed(3)}/1k</span>
+        <span class="val">${fmt(t.search)}</span>
+      </div>
+      ${t.livecrawl > 0 ? `<div class="popup-line">
+        <span class="desc">Livecrawl overage (URLs &gt; 10/call)</span>
+        <span class="val">${fmt(t.livecrawl)}</span>
+      </div>` : ''}
+    </div>
+    <div class="popup-total">
+      <span>Session Total</span>
+      <span>${fmt(t.cost)}</span>
+    </div>
+    <div class="popup-footnote">
+      $${p.input_per_m||'?'}/M input · $${p.output_per_m||'?'}/M output · $${(searchRate*1000).toFixed(3)}/1k searches
+    </div>
+  `;
+
+  const popup = document.getElementById('costPopup');
+  popup.classList.add('visible');
+  const rect = anchorEl.getBoundingClientRect();
+  const pw = popup.offsetWidth, ph = popup.offsetHeight;
+  let left = rect.left + rect.width / 2 - pw / 2;
+  let top  = rect.bottom + 8;
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 8;
+  popup.style.left = left + 'px';
+  popup.style.top  = top  + 'px';
+}
+
+function hideCostPopup() {
+  document.getElementById('costPopup').classList.remove('visible');
+}
+
+document.addEventListener('click', e => {
+  const popup = document.getElementById('costPopup');
+  if (popup && popup.classList.contains('visible') &&
+      !popup.contains(e.target) && !e.target.classList.contains('cost-clickable')) {
+    hideCostPopup();
+  }
+});
+
+function stopQuery() {
+  if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
+  finalize();
+}
+
+function finalize() {
+  _abortCtrl = null;
+  const btn = document.getElementById('ask-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  btn.disabled = false;
+  btn.innerHTML = 'Search →';
+  if (stopBtn) stopBtn.style.display = 'none';
+}
+
+// ── JSON Tree ─────────────────────────────────────────────────────────────
+function buildJsonTree(value, key) {
+  const wrap = document.createElement('div');
+  wrap.className = 'jt-node';
+
+  const type = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+
+  if (type === 'object' || type === 'array') {
+    const entries = type === 'array' ? value.map((v,i) => [i, v]) : Object.entries(value);
+    const open = entries.length <= 5 && entries.every(([,v]) => typeof v !== 'object' || v === null);
+    const brackets = type === 'array' ? ['[',']'] : ['{','}'];
+    const preview = entries.length === 0 ? '' :
+      type === 'array' ? `${entries.length} item${entries.length>1?'s':''}` :
+      entries.slice(0,2).map(([k])=>k).join(', ') + (entries.length>2?'…':'');
+
+    const header = document.createElement('span');
+    header.className = 'jt-toggle';
+    header.innerHTML = `<span class="jt-arrow">${open ? '▾' : '▸'}</span>` +
+      (key !== undefined ? `<span class="jt-key">${JSON.stringify(String(key))}</span><span class="jt-colon">:</span>` : '') +
+      `<span class="jt-bracket">${brackets[0]}</span>` +
+      (entries.length === 0 ? `<span class="jt-bracket">${brackets[1]}</span>` : `<span class="jt-count">${preview}</span>`);
+
+    const children = document.createElement('div');
+    children.className = 'jt-children' + (open ? ' open' : '');
+
+    entries.forEach(([k, v]) => children.appendChild(buildJsonTree(v, type === 'array' ? null : k)));
+
+    const closer = document.createElement('span');
+    closer.className = 'jt-bracket';
+    closer.textContent = brackets[1];
+
+    header.addEventListener('click', () => {
+      const isOpen = children.classList.toggle('open');
+      header.querySelector('.jt-arrow').textContent = isOpen ? '▾' : '▸';
+    });
+
+    wrap.appendChild(header);
+    if (entries.length > 0) { wrap.appendChild(children); wrap.appendChild(closer); }
+  } else {
+    let valHtml;
+    if (type === 'string') valHtml = `<span class="jt-str">${JSON.stringify(value)}</span>`;
+    else if (type === 'number') valHtml = `<span class="jt-num">${value}</span>`;
+    else if (type === 'boolean') valHtml = `<span class="jt-bool">${value}</span>`;
+    else valHtml = `<span class="jt-null">null</span>`;
+
+    wrap.innerHTML = key !== undefined
+      ? `<span class="jt-key">${JSON.stringify(String(key))}</span><span class="jt-colon">:</span>${valHtml}`
+      : valHtml;
+  }
+
+  return wrap;
+}
+
+// ── Chat ───────────────────────────────────────────────────────────────────
+let _chatHistory = [];
+let _chatAbort = null;
+let _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0, llm: 0, search: 0, livecrawl: 0 };
+let _chatPricing = null;  // last seen pricing (rates don't change mid-session)
+
+function updateChatStats(stats, costs, model, pricing) {
+  if (pricing) _chatPricing = pricing;
+  const tb = stats.token_breakdown || {};
+  _chatTotals.turns++;
+  _chatTotals.input      += tb.input  || 0;
+  _chatTotals.ctx        += tb.search_context || 0;
+  _chatTotals.output     += tb.output || 0;
+  _chatTotals.searches   += stats.search_calls || 0;
+  _chatTotals.cost       += costs?.total || 0;
+  _chatTotals.llm        += costs?.llm || 0;
+  _chatTotals.search     += costs?.search || 0;
+  _chatTotals.livecrawl  += costs?.livecrawl_overage || 0;
+  if (pricing) _chatPricing = pricing;
+
+  const total = _chatTotals.input + _chatTotals.output;
+  document.getElementById('chat-stats-bar').style.display = '';
+  document.getElementById('cstat-turns').textContent   = _chatTotals.turns;
+  document.getElementById('cstat-tokens').textContent  = total.toLocaleString();
+  document.getElementById('cstat-searches').textContent = _chatTotals.searches;
+  const costEl = document.getElementById('cstat-cost');
+  costEl.innerHTML = `<span class="cost-clickable" onclick="showChatCostPopup(this)">${'$' + _chatTotals.cost.toFixed(5)}</span>`;
+  document.getElementById('cstat-model').textContent   = model || '—';
+  const bd = document.getElementById('cstat-tok-breakdown');
+  bd.style.display = 'flex';
+  document.getElementById('cstat-tok-in').textContent  = _chatTotals.input.toLocaleString();
+  document.getElementById('cstat-tok-ctx').textContent = _chatTotals.ctx.toLocaleString();
+  document.getElementById('cstat-tok-out').textContent = _chatTotals.output.toLocaleString();
+}
+
+function chatNew() {
+  _chatHistory = [];
+  _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0 };
+  document.getElementById('chat-stats-bar').style.display = 'none';
+  document.getElementById('chat-hero').style.display = '';
+  const thread = document.getElementById('chat-thread');
+  thread.innerHTML = '';
+}
+
+function chatStop() {
+  if (_chatAbort) { _chatAbort.abort(); _chatAbort = null; }
+  chatFinalize();
+}
+
+function chatFinalize() {
+  _chatAbort = null;
+  document.getElementById('chat-send-btn').disabled = false;
+  document.getElementById('chat-send-btn').innerHTML = 'Send →';
+  document.getElementById('chat-stop-btn').style.display = 'none';
+}
+
+async function chatSend() {
+  const question = document.getElementById('chat-input').value.trim();
+  if (!question) return;
+  const model = document.getElementById('chat-model-select').value;
+  if (!model) return;
+
+  document.getElementById('chat-input').value = '';
+  document.getElementById('chat-send-btn').disabled = true;
+  document.getElementById('chat-send-btn').innerHTML = '<span class="spinner"></span>';
+  document.getElementById('chat-stop-btn').style.display = '';
+
+  // Hide hero strip on first message
+  document.getElementById('chat-hero')?.style && (document.getElementById('chat-hero').style.display = 'none');
+  const thread = document.getElementById('chat-thread');
+  thread.querySelector('.placeholder')?.remove();
+
+  // Render turn
+  const turnId = 'turn-' + Date.now();
+  const turnNum = _chatTotals.turns + 1;
+  thread.insertAdjacentHTML('beforeend', `
+    <div class="chat-turn" id="${turnId}">
+      <div class="chat-row-user">
+        <div class="chat-row-label">You</div>
+        <div class="chat-bubble-user">${question.replace(/</g,'&lt;')}</div>
+      </div>
+      <div class="chat-row-assistant">
+        <div class="chat-assistant-card streaming" id="${turnId}-card">
+          <div class="chat-assistant-header">
+            <div class="chat-assistant-header-left">
+              <span class="spinner"></span>
+              <span id="${turnId}-status">Thinking…</span>
+            </div>
+            <span class="chat-assistant-model" id="${turnId}-model">${model}</span>
+          </div>
+          <div class="chat-assistant-body" id="${turnId}-bubble"><span style="color:var(--muted);font-size:13px">…</span></div>
+          <div class="chat-assistant-footer" id="${turnId}-footer" style="display:none"></div>
+          <div class="chat-searches-body" id="${turnId}-searches"></div>
+          <div class="chat-request-body" id="${turnId}-request"></div>
+        </div>
+      </div>
+    </div>
+  `);
+  thread.scrollTop = thread.scrollHeight;
+
+  const card = document.getElementById(`${turnId}-card`);
+  const bubble = document.getElementById(`${turnId}-bubble`);
+  const statusEl = document.getElementById(`${turnId}-status`);
+  const searchesBody = document.getElementById(`${turnId}-searches`);
+  const requestBody = document.getElementById(`${turnId}-request`);
+  const footer = document.getElementById(`${turnId}-footer`);
+  // meta is unused now but kept for compat
+  const meta = { innerHTML: '' };
+
+  // Build and store the request payload for display — show chip immediately
+  const requestPayload = { model, question, prior_messages: _chatHistory, search_enabled: document.getElementById('chat-search-track').classList.contains('on') };
+  requestBody.appendChild(buildJsonTree(requestPayload));
+  // Force root expanded — prior_messages array would otherwise keep root collapsed
+  const rootChildren = requestBody.querySelector('.jt-children');
+  if (rootChildren) { rootChildren.classList.add('open'); requestBody.querySelector('.jt-arrow').textContent = '▾'; }
+  footer.style.display = 'flex';
+  footer.insertAdjacentHTML('beforeend',
+    `<button class="chat-footer-chip" id="${turnId}-rtoggle" onclick="toggleChatRequest('${turnId}')"><span class="chip-arrow">▸</span> API Request</button>`);
+
+  _chatAbort = new AbortController();
+  let answerText = '';
+  let searchCount = 0;
+  let doneStats = null;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(requestPayload),
+      signal: _chatAbort.signal,
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for (const part of parts) {
+        if (!part.startsWith('data:')) continue;
+        const ev = JSON.parse(part.slice(5).trim());
+
+        if (ev.event === 'tool_call') {
+          searchCount++;
+          const isLivecrawl = !ev.query && ev.params?.url;
+          const label = isLivecrawl
+            ? `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-size:11px">${(ev.params.url||'').replace(/^https?:\/\//,'').substring(0,55)}…</span>`
+            : `"${ev.query}"`;
+          const paramStr = Object.entries(ev.params||{}).filter(([k,v])=>v&&k!=='url').map(([k,v])=>`${k}=${v}`).join(' · ');
+          searchesBody.insertAdjacentHTML('beforeend', `
+            <div class="trace-item search" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
+              <span class="trace-icon">🔍</span>
+              <div class="trace-content"><div class="trace-query">${label}</div>
+              <div class="trace-meta">Search ${ev.search_num} · round ${ev.round}${paramStr ? ' · ' + paramStr : ''}</div></div>
+            </div>`);
+          if (statusEl) { statusEl.textContent = `Searching… (${searchCount})`; }
+        }
+
+        else if (ev.event === 'search_result') {
+          const lastSearch = searchesBody.querySelector('.trace-item.search:last-child');
+          if (lastSearch) lastSearch.insertAdjacentHTML('afterend', `
+            <div class="trace-item result" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
+              <span class="trace-icon">✓</span>
+              <div class="trace-content"><div class="trace-query">${ev.result_count} results in ${Math.round(ev.latency_ms)}ms</div>
+              ${ev.sources.length ? `<div class="trace-meta">${ev.sources.slice(0,3).map(u=>new URL(u).hostname).join(', ')}${ev.sources.length>3?` +${ev.sources.length-3} more`:''}</div>` : ''}
+              </div></div>`);
+        }
+
+        else if (ev.event === 'answer') {
+          answerText = ev.text || '';
+          if (statusEl) { statusEl.parentElement.querySelector('.spinner')?.remove(); statusEl.textContent = 'Answered'; }
+          bubble.innerHTML = renderMarkdown(answerText);
+        }
+
+        else if (ev.event === 'retrying') {
+          if (statusEl) statusEl.textContent = ev.message;
+          bubble.innerHTML = `<div class="retrying-notice"><span class="spinner" style="border-top-color:var(--orange)"></span>${ev.message}</div>`;
+        }
+
+        else if (ev.event === 'error') {
+          card.classList.remove('streaming');
+          const is429 = ev.message.includes('busy') || ev.message.includes('overloaded');
+          bubble.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+            <span style="font-size:15px">✕</span>
+            ${ev.message}
+          </div>`;
+          if (statusEl) statusEl.textContent = is429 ? 'Unavailable' : 'Error';
+        }
+
+        else if (ev.event === 'done') {
+          doneStats = ev.stats || {};
+          const latency = doneStats.latency_ms ? (doneStats.latency_ms/1000).toFixed(1)+'s' : '';
+          const searches = doneStats.search_calls || 0;
+          card.classList.remove('streaming');
+
+          // Update header: remove spinner, show latency
+          const hdr = card.querySelector('.chat-assistant-header');
+          if (hdr) hdr.querySelector('.chat-assistant-header-left').innerHTML =
+            `<span style="color:var(--muted)">${latency}</span>`;
+
+          // Footer chips — request chip already rendered at send time; add searches chip now
+          if (searches) footer.insertAdjacentHTML('afterbegin',
+            `<button class="chat-footer-chip" id="${turnId}-stoggle" onclick="toggleChatSearches('${turnId}')"><span class="chip-arrow">▸</span> ${searches} search${searches>1?'es':''}</button>`);
+          else searchesBody.style.display = 'none';
+
+          updateChatStats(doneStats, ev.costs, doneStats.model_confirmed, ev.pricing);
+        }
+      }
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      card.classList.remove('streaming');
+      bubble.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+        <span style="font-size:15px">✕</span> ${e.message}
+      </div>`;
+    }
+  }
+
+  // Append to history only on clean completion
+  if (answerText) {
+    _chatHistory.push({ role: 'user', content: question });
+    _chatHistory.push({ role: 'assistant', content: answerText });
+  }
+
+  thread.scrollTop = thread.scrollHeight;
+  chatFinalize();
+}
+
+function toggleChatSearches(turnId) {
+  const body = document.getElementById(`${turnId}-searches`);
+  const btn = document.getElementById(`${turnId}-stoggle`);
+  const open = body.classList.toggle('open');
+  if (btn) {
+    btn.classList.toggle('active', open);
+    btn.querySelector('.chip-arrow').textContent = open ? '▾' : '▸';
+  }
+}
+
+function toggleChatRequest(turnId) {
+  const body = document.getElementById(`${turnId}-request`);
+  const btn = document.getElementById(`${turnId}-rtoggle`);
+  const open = body.classList.toggle('open');
+  if (btn) {
+    btn.classList.toggle('active', open);
+    btn.querySelector('.chip-arrow').textContent = open ? '▾' : '▸';
+  }
+}
+
+// ── Pipeline (3-step manual flow) ─────────────────────────────────────────
+
+function _slug(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Store search hits per company so brief can use them
+const _pHits = {};
+const _pRawData = {};    // slug → full enrich response for JSON tree
+const _pThinking = {};   // 'brief:slug' | 'email:slug' → thinking text
+const _pBriefs = {};     // slug → completed brief text (for Step 3 drawer context)
+const _pCompany = {};    // slug → company name
+
+// ── Pipeline stats accumulator ─────────────────────────────────────────────
+const _pipeStats = { searches: 0, tokensIn: 0, tokensOut: 0, cost: 0 };
+
+function _resetPipeStats() {
+  _pipeStats.searches = 0; _pipeStats.tokensIn = 0; _pipeStats.tokensOut = 0; _pipeStats.cost = 0;
+  _updatePipeStats();
+  document.getElementById('pipeline-stats-strip').style.display = 'none';
+}
+
+function _updatePipeStats() {
+  document.getElementById('pstat-searches').textContent = _pipeStats.searches;
+  document.getElementById('pstat-tokens-in').textContent = _pipeStats.tokensIn.toLocaleString();
+  document.getElementById('pstat-tokens-out').textContent = _pipeStats.tokensOut.toLocaleString();
+  document.getElementById('pstat-cost').textContent = '$' + _pipeStats.cost.toFixed(6);
+  document.getElementById('pipeline-stats-strip').style.display = '';
+}
+
+function _addPipeTokens(inputTokens, outputTokens, pricing) {
+  _pipeStats.tokensIn  += inputTokens;
+  _pipeStats.tokensOut += outputTokens;
+  if (pricing) {
+    _pipeStats.cost += (inputTokens  / 1_000_000) * (pricing.input_per_m  || 0);
+    _pipeStats.cost += (outputTokens / 1_000_000) * (pricing.output_per_m || 0);
+  }
+  _updatePipeStats();
+}
+
+async function runPipeline() {
+  const raw = document.getElementById('pipeline-companies').value;
+  const companies = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!companies.length) return;
+
+  const btn = document.getElementById('pipeline-run-btn');
+  const runLabel = btn.querySelector('.pipeline-run-label');
+  const runSub   = btn.querySelector('.pipeline-run-sub');
+  btn.disabled = true;
+  if (runLabel) runLabel.textContent = 'Running…';
+
+  _resetPipeStats();
+  document.getElementById('pipeline-results').innerHTML = '';
+
+  // Enrich all companies (parallel fetch, sequential card creation)
+  await Promise.all(companies.map(company => _enrichCompany(company)));
+
+  btn.disabled = false;
+  if (runLabel) runLabel.textContent = 'Run Pipeline';
+  if (runSub)   runSub.textContent   = 'You.com + Parasail';
+}
+
+async function _enrichCompany(company) {
+  const slug = _slug(company);
+  const results = document.getElementById('pipeline-results');
+
+  // Create card with step 1 loading skeleton
+  const card = document.createElement('div');
+  card.className = 'company-card';
+  card.id = `pcard-${slug}`;
+  card.innerHTML = `
+    <div class="company-card-header">
+      <div class="company-card-name"><span class="spinner"></span>Personalized Outreach for ${company}</div>
+      <div class="pipe-steps-indicator">
+        <span class="pipe-step-dot active" id="pdot-1-${slug}">1</span>
+        <span class="pipe-step-line"></span>
+        <span class="pipe-step-dot" id="pdot-2-${slug}">2</span>
+        <span class="pipe-step-line"></span>
+        <span class="pipe-step-dot" id="pdot-3-${slug}">3</span>
+      </div>
+    </div>
+
+    <div class="pipe-step-block" id="pstep1-${slug}">
+      <div class="pipe-step-header" onclick="togglePipeStep('pstep1-body-${slug}', this)" style="cursor:pointer">
+        <div class="pipe-step-num">1</div>
+        <div style="flex:1">
+          <div class="pipe-step-title">Live Web Intel on ${company}</div>
+          <div class="pipe-step-sub" id="pstep1-sub-${slug}">You.com Web Search</div>
+        </div>
+        <button class="pipe-code-btn" title="View code & prompt" onclick="event.stopPropagation();openCodeDrawer(1,this,'${slug}')">Code &amp; Prompt</button>
+        <span class="pipe-collapse-arrow">▾</span>
+      </div>
+      <div class="pipe-step-body" id="pstep1-body-${slug}">
+        <div class="skel" style="height:13px;margin-bottom:8px"></div>
+        <div class="skel" style="height:13px;width:75%;margin-bottom:8px"></div>
+        <div class="skel" style="height:13px;width:55%"></div>
+      </div>
+    </div>
+  `;
+  results.appendChild(card);
+
+  // Call enrich endpoint
+  try {
+    const res = await fetch('/api/pipeline/enrich', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ company }),
+    });
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+    _pHits[slug] = data.hits || [];
+    _pRawData[slug] = data;
+
+    // Render search results
+    const hits = data.hits || [];
+    const body = document.getElementById(`pstep1-body-${slug}`);
+    const hitsHtml = hits.length === 0
+      ? `<div style="color:var(--muted);font-size:13px">No results found.</div>`
+      : hits.map(h => `
+          <div class="intel-hit">
+            <div class="intel-hit-title"><a href="${h.url}" target="_blank" rel="noopener">${h.title}</a></div>
+            <div class="intel-hit-desc">${h.description}</div>
+            <div class="intel-hit-meta">${(() => { try { return new URL(h.url).hostname; } catch(e) { return ''; } })()}${h.page_age ? ' · ' + h.page_age : ''}</div>
+          </div>`).join('');
+
+    body.innerHTML = `
+      <div class="search-settings" id="ssbar-${slug}">
+        <span class="search-settings-label">Results</span>
+        <div class="result-pills">
+          ${[5,10,20].map(n => `<button class="result-pill${n===5?' active':''}" onclick="_setPillActive(this,'ssbar-${slug}')" data-n="${n}">${n}</button>`).join('')}
+        </div>
+        <span class="search-settings-label" style="margin-left:8px">Livecrawl</span>
+        <div class="lc-toggle" onclick="_toggleLivecrawl(this)" id="lctoggle-${slug}">
+          <div class="lc-track" id="lctrack-${slug}"><div class="lc-thumb"></div></div>
+          <span id="lclabel-${slug}" style="color:var(--muted);font-size:11.5px">Off</span>
+        </div>
+        <button class="rerun-btn" id="rerunbtn-${slug}" onclick="_rerunEnrich('${company}','${slug}')">↻ Re-run</button>
+      </div>
+      <div id="phits-${slug}">${hitsHtml}</div>`;
+
+    // Update header — remove spinner
+    const hdr = card.querySelector('.company-card-name');
+    hdr.innerHTML = `Personalized Outreach for ${company}`;
+    // Update Step 1 sub-line with stats
+    const step1Sub = card.querySelector('#pstep1-sub-' + slug);
+    if (step1Sub) step1Sub.textContent = `You.com Web Search · ${hits.length} sources · ${data.latency_ms}ms`;
+    _dotDone(slug, 1);
+    _pipeStats.searches++;
+    _pipeStats.cost += (data.ydc_cost || 0.005);
+    _updatePipeStats();
+
+    // Add "Generate Brief" action bar
+    card.insertAdjacentHTML('beforeend', `
+      <div class="pipe-action-bar" id="paction1-${slug}">
+        <span style="font-size:13px;color:var(--muted)">Review the sources above, then surface Parasail sales signals.</span>
+        <button class="pipe-action-btn" onclick="generateBrief('${company}','${slug}')">
+          Surface Sales Signals →
+        </button>
+      </div>
+    `);
+
+  } catch(e) {
+    const body = document.getElementById(`pstep1-body-${slug}`);
+    if (body) body.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red);margin:0">✕ ${e.message}</div>`;
+    card.querySelector('.company-card-name').innerHTML = company;
+  }
+}
+
+async function generateBrief(company, slug) {
+  const _t2start = Date.now();
+  const modelKey = document.getElementById('pipeline-research-model').value;
+  const modelName = (_modelsMap[modelKey]?.display_name) || modelKey;
+  const hits = _pHits[slug] || [];
+
+  document.getElementById(`paction1-${slug}`)?.remove();
+  _dotDone(slug, 1);
+  _dotActive(slug, 2);
+
+  const card = document.getElementById(`pcard-${slug}`);
+  card.insertAdjacentHTML('beforeend', `
+    <div class="pipe-step-block" id="pstep2-${slug}">
+      <div class="pipe-step-header" onclick="togglePipeStep('pstep2-body-${slug}', this)" style="cursor:pointer">
+        <div class="pipe-step-num">2</div>
+        <div style="flex:1">
+          <div class="pipe-step-title">${company} Signals for Parasail</div>
+          <div class="pipe-step-sub" id="pstep2-sub-${slug}">Parasail · ${modelName}</div>
+        </div>
+        <span class="spinner" id="pspinner2-${slug}"></span>
+        <button class="pipe-code-btn" title="View code & prompt" onclick="event.stopPropagation();openCodeDrawer(2,this,'${slug}')">Code &amp; Prompt</button>
+        <span class="pipe-collapse-arrow">▾</span>
+      </div>
+      <div class="pipe-step-body" id="pstep2-body-${slug}">
+        <textarea id="pbrief-${slug}" class="pipe-brief-editor" readonly
+          placeholder="Generating brief…" rows="6"></textarea>
+      </div>
+    </div>
+  `);
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  const textarea = document.getElementById(`pbrief-${slug}`);
+  let fullText = '';
+
+  try {
+    const res = await fetch('/api/pipeline/brief', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ company, hits, model: modelKey }),
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const parts = buf.split('\n\n'); buf = parts.pop();
+      for (const part of parts) {
+        if (!part.startsWith('data:')) continue;
+        const ev = JSON.parse(part.slice(5).trim());
+        console.log('[brief SSE]', ev.event, Object.keys(ev));
+        if (ev.event === 'token') { fullText += ev.text; textarea.value = fullText; }
+        else if (ev.event === 'thinking') { _pThinking[`brief:${slug}`] = ev.text; console.log('[thinking] brief captured', ev.text.length, 'chars'); }
+        else if (ev.event === 'done') { _addPipeTokens(ev.input_tokens || 0, ev.output_tokens || 0, ev.pricing); }
+        else if (ev.event === 'error') throw new Error(ev.message);
+      }
+    }
+  } catch(e) {
+    textarea.value = `Error: ${e.message}`;
+    return;
+  }
+
+  document.getElementById(`pspinner2-${slug}`)?.remove();
+  textarea.readOnly = false;
+  textarea.style.borderColor = 'var(--primary)';
+  _pBriefs[slug] = fullText;
+  _pCompany[slug] = company;
+  _dotDone(slug, 2);
+  const _t2end = Date.now();
+  const step2Sub = document.getElementById(`pstep2-sub-${slug}`);
+  if (step2Sub) step2Sub.textContent = `Parasail · ${fullText.split('•').filter(Boolean).length} signals · ${Math.round((_t2end - _t2start) / 1000)}s`;
+
+  card.insertAdjacentHTML('beforeend', `
+    <div class="pipe-action-bar" id="paction2-${slug}">
+      <span style="font-size:13px;color:var(--muted)">Edit signals if needed, then draft the Parasail pitch.</span>
+      <button class="pipe-action-btn" onclick="generateEmail('${company}','${slug}')">
+        Draft Pitch Email →
+      </button>
+    </div>
+  `);
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function generateEmail(company, slug) {
+  const _t3start = Date.now();
+  const modelKey  = document.getElementById('pipeline-email-model').value;
+  const modelName = (_modelsMap[modelKey]?.display_name) || modelKey;
+  const brief     = document.getElementById(`pbrief-${slug}`).value;
+
+  document.getElementById(`paction2-${slug}`)?.remove();
+  _dotActive(slug, 3);
+
+  const card = document.getElementById(`pcard-${slug}`);
+  card.insertAdjacentHTML('beforeend', `
+    <div class="pipe-step-block" id="pstep3-${slug}">
+      <div class="pipe-step-header" onclick="togglePipeStep('pstep3-body-${slug}', this)" style="cursor:pointer">
+        <div class="pipe-step-num">3</div>
+        <div style="flex:1">
+          <div class="pipe-step-title">Parasail Pitch → ${company}</div>
+          <div class="pipe-step-sub" id="pstep3-sub-${slug}">Parasail · ${modelName}</div>
+        </div>
+        <span class="spinner" id="pspinner3-${slug}"></span>
+        <button class="pipe-code-btn" title="View code & prompt" onclick="event.stopPropagation();openCodeDrawer(3,this,'${slug}')">Code &amp; Prompt</button>
+        <span class="pipe-collapse-arrow">▾</span>
+      </div>
+      <div class="pipe-step-body" id="pstep3-body-${slug}">
+        <div class="skel" style="height:13px;margin-bottom:8px"></div>
+        <div class="skel" style="height:13px;width:80%;margin-bottom:8px"></div>
+        <div class="skel" style="height:13px;width:65%"></div>
+      </div>
+    </div>
+  `);
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  let fullText = '';
+
+  try {
+    const res = await fetch('/api/pipeline/email', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ company, brief, model: modelKey }),
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const parts = buf.split('\n\n'); buf = parts.pop();
+      for (const part of parts) {
+        if (!part.startsWith('data:')) continue;
+        const ev = JSON.parse(part.slice(5).trim());
+        if (ev.event === 'token') {
+          fullText += ev.text;
+          const body = document.getElementById(`pstep3-body-${slug}`);
+          if (body) body.innerHTML = _renderEmail(fullText);
+        }
+        else if (ev.event === 'thinking') { _pThinking[`email:${slug}`] = ev.text; console.log('[thinking] email captured', ev.text.length, 'chars'); }
+        else if (ev.event === 'done') { _addPipeTokens(ev.input_tokens || 0, ev.output_tokens || 0, ev.pricing); }
+        else if (ev.event === 'error') throw new Error(ev.message);
+      }
+    }
+  } catch(e) {
+    const body = document.getElementById(`pstep3-body-${slug}`);
+    if (body) body.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red);margin:0">✕ ${e.message}</div>`;
+    return;
+  }
+
+  document.getElementById(`pspinner3-${slug}`)?.remove();
+  _dotDone(slug, 3);
+  const step3Sub = document.getElementById(`pstep3-sub-${slug}`);
+  if (step3Sub) step3Sub.textContent = `Parasail · ${Math.round((Date.now() - _t3start) / 1000)}s`;
+
+  // Add copy button
+  card.insertAdjacentHTML('beforeend', `
+    <div class="pipe-action-bar">
+      <span style="font-size:13px;color:var(--green);font-weight:600">✓ Pipeline complete</span>
+      <button class="pipe-action-btn" style="background:var(--band);color:var(--text-2);border:1px solid var(--border);box-shadow:none"
+        onclick="navigator.clipboard.writeText(document.getElementById('pstep3-body-${slug}')?.innerText||'').then(()=>this.textContent='Copied ✓')">
+        Copy Email
+      </button>
+    </div>
+  `);
+}
+
+function _renderEmail(raw) {
+  const subMatch = raw.match(/^Subject:\s*(.+)/im);
+  const subject  = subMatch ? subMatch[1].trim() : '';
+  const body     = raw.replace(/^Subject:.*$/im, '').replace(/^\n+/, '');
+  return `
+    ${subject ? `<div class="email-subject">Subject: ${subject}</div>` : ''}
+    <div class="email-body">${body}</div>
+  `;
+}
+
+function _dotDone(slug, n) {
+  const el = document.getElementById(`pdot-${n}-${slug}`);
+  if (el) { el.classList.remove('active'); el.classList.add('done'); el.textContent = '✓'; }
+}
+function _dotActive(slug, n) {
+  const el = document.getElementById(`pdot-${n}-${slug}`);
+  if (el) el.classList.add('active');
+}
+
+// ── JSON tree renderer ────────────────────────────────────────────────────────
+
+function _setPillActive(btn, barId) {
+  document.querySelectorAll(`#${barId} .result-pill`).forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function _toggleLivecrawl(el) {
+  const track = el.querySelector('.lc-track');
+  const label = el.querySelector('[id^="lclabel-"]');
+  const on = track.classList.toggle('on');
+  if (label) label.textContent = on ? 'On' : 'Off';
+  label.style.color = on ? 'var(--primary)' : 'var(--muted)';
+}
+
+async function _rerunEnrich(company, slug) {
+  const bar     = document.getElementById(`ssbar-${slug}`);
+  const btn     = document.getElementById(`rerunbtn-${slug}`);
+  const track   = document.getElementById(`lctrack-${slug}`);
+  const activePill = bar.querySelector('.result-pill.active');
+  const numResults = activePill ? parseInt(activePill.dataset.n) : 5;
+  const livecrawl  = track ? track.classList.contains('on') : false;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  // Replace hits area with skeleton (keep settings bar)
+  const hitsWrap = document.getElementById(`phits-${slug}`);
+  if (hitsWrap) {
+    hitsWrap.innerHTML = `
+      <div class="skel" style="height:13px;margin-bottom:8px"></div>
+      <div class="skel" style="height:13px;width:75%;margin-bottom:8px"></div>
+      <div class="skel" style="height:13px;width:55%"></div>`;
+  }
+
+  try {
+    const res  = await fetch('/api/pipeline/enrich', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ company, num_results: numResults, livecrawl }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    _pHits[slug]    = data.hits || [];
+    _pRawData[slug] = data;
+
+    const hits    = data.hits || [];
+    const hitsHtml = hits.length === 0
+      ? `<div style="color:var(--muted);font-size:13px">No results found.</div>`
+      : hits.map(h => `
+          <div class="intel-hit">
+            <div class="intel-hit-title"><a href="${h.url}" target="_blank" rel="noopener">${h.title}</a></div>
+            <div class="intel-hit-desc">${h.description}</div>
+            <div class="intel-hit-meta">${(() => { try { return new URL(h.url).hostname; } catch(e) { return ''; } })()}${h.page_age ? ' · ' + h.page_age : ''}</div>
+          </div>`).join('');
+
+    if (hitsWrap) hitsWrap.innerHTML = hitsHtml;
+
+    // Update card header
+    const card = document.getElementById(`pcard-${slug}`);
+    const hdr  = card?.querySelector('.company-card-name');
+    if (hdr) hdr.innerHTML = `Personalized Outreach for ${company} <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:4px">${hits.length} sources · ${data.latency_ms}ms${livecrawl ? ' · livecrawl' : ''}</span>`;
+
+    _pipeStats.searches++;
+    _pipeStats.cost += (data.ydc_cost || 0.005);
+    _updatePipeStats();
+
+    // Refresh drawer response tab if it's open for this slug
+    if (_activeDrawerStep === 1 && _activeDrawerSlug === slug) {
+      const panel = document.getElementById('dpanel-response');
+      if (panel) {
+        panel.innerHTML = `<div class="drawer-label">You.com API Response</div>
+          <div class="jt" style="font-size:11.5px;line-height:1.7;overflow-x:auto"></div>`;
+        panel.querySelector('.jt').appendChild(_buildJsonNode(_pRawData[slug], 0, true));
+      }
+    }
+
+  } catch(e) {
+    if (hitsWrap) hitsWrap.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red);margin:0">✕ ${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↻ Re-run';
+}
+
+
+function _buildJsonNode(val, depth, expanded) {
+  const type = val === null ? 'null' : Array.isArray(val) ? 'array' : typeof val;
+
+  if (type === 'object' || type === 'array') {
+    const entries = type === 'array'
+      ? val.map((v, i) => [i, v])
+      : Object.entries(val);
+    const preview = type === 'array' ? `[${val.length}]` : `{${Object.keys(val).length}}`;
+
+    const wrap = document.createElement('span');
+    const header = document.createElement('span');
+    header.className = 'jt-expander' + (expanded ? ' open' : '');
+
+    const arrow = document.createElement('span');
+    arrow.className = 'jte';
+    arrow.textContent = '▶';
+    header.appendChild(arrow);
+
+    const bracket = document.createElement('span');
+    bracket.style.color = 'var(--muted)';
+    bracket.textContent = type === 'array' ? '[' : '{';
+    header.appendChild(bracket);
+
+    const summary = document.createElement('span');
+    summary.className = 'jt-summary';
+    summary.textContent = type === 'array' ? `${val.length} items` : `${Object.keys(val).length} keys`;
+    header.appendChild(summary);
+
+    const children = document.createElement('ul');
+    children.className = 'jt-children' + (expanded ? ' open' : '');
+
+    entries.forEach(([k, v]) => {
+      const li = document.createElement('li');
+      const keySpan = document.createElement('span');
+      keySpan.className = 'jt-key';
+      keySpan.textContent = type === 'array' ? `${k}: ` : `"${k}": `;
+      li.appendChild(keySpan);
+      li.appendChild(_buildJsonNode(v, depth + 1, depth < 1));
+      children.appendChild(li);
+    });
+
+    header.addEventListener('click', () => {
+      const isOpen = children.classList.toggle('open');
+      header.classList.toggle('open', isOpen);
+    });
+
+    const close = document.createElement('span');
+    close.style.color = 'var(--muted)';
+    close.textContent = type === 'array' ? ']' : '}';
+
+    wrap.appendChild(header);
+    wrap.appendChild(children);
+    wrap.appendChild(close);
+    return wrap;
+  }
+
+  const span = document.createElement('span');
+  if (type === 'string') {
+    span.className = 'jt-str';
+    span.textContent = `"${val}"`;
+  } else if (type === 'number') {
+    span.className = 'jt-num';
+    span.textContent = val;
+  } else if (type === 'boolean') {
+    span.className = 'jt-bool';
+    span.textContent = val;
+  } else {
+    span.className = 'jt-null';
+    span.textContent = 'null';
+  }
+  return span;
+}
+
+function togglePipeStep(bodyId, headerEl) {
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  const arrow = headerEl?.querySelector('.pipe-collapse-arrow');
+  if (arrow) arrow.textContent = collapsed ? '▾' : '▸';
+}
+
+function toggleCardSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+let _sourceData = null;
+
+async function loadSource() {
+  try {
+    const data = await fetch('/api/source').then(r => r.json());
+    _sourceData = data;
+    STEP_INFO[1].code = data.enrich;
+    STEP_INFO[2].code = data.brief_stream + '\n\n' + data._llm_stream;
+    STEP_INFO[3].code = data.email_stream + '\n\n' + data._llm_stream;
+
+    // Populate Models & Pricing tab
+    const listEl = document.getElementById('about-list-models-snippet');
+    if (listEl && data.list_models_from_api) listEl.textContent = data.list_models_from_api;
+
+    const tbody = document.getElementById('about-pricing-tbody');
+    if (tbody && data.models) {
+      tbody.innerHTML = Object.values(data.models).map(m => `
+        <tr>
+          <td><strong>${m.display_name}</strong><br><span style="font-size:11px;color:var(--muted);font-family:monospace">${m.model_id}</span></td>
+          <td style="color:var(--muted)">${m.provider}</td>
+          <td>$${m.pricing.input.toFixed(3)}</td>
+          <td>$${m.pricing.output.toFixed(3)}</td>
+        </tr>`).join('');
+    }
+  } catch(e) { console.warn('source load failed', e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadModels();
+  loadSource();
+  // Ask tab is default — pre-fill with a question designed to show the search toggle demo
+  document.getElementById('question').value = 'Who won the 2026 FIFA World Cup semifinals and who are the finalists?';
+  document.getElementById('question').addEventListener('keydown', e => {
+    if (e.key === 'Enter') ask();
+  });
+  document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') chatSend();
+  });
+});
+</script>
+<!-- ── Code drawer ─────────────────────────────────────────────────────── -->
+<div id="drawer-overlay" onclick="closeCodeDrawer()"></div>
+<div id="code-drawer" role="dialog" aria-label="Step code & prompt">
+  <div class="drawer-header">
+    <div class="drawer-step-badge" id="drawer-badge">1</div>
+    <div class="drawer-title" id="drawer-title">Live Web Intel</div>
+    <button class="drawer-close" onclick="closeCodeDrawer()" title="Close">✕</button>
+  </div>
+  <div class="drawer-tabs" id="drawer-tabs">
+    <button class="drawer-tab active" onclick="switchDrawerTab('prompt', this)">Prompt</button>
+    <button class="drawer-tab" onclick="switchDrawerTab('code', this)">Code</button>
+    <button class="drawer-tab" onclick="switchDrawerTab('findings', this)">Findings</button>
+    <button class="drawer-tab" id="drawer-tab-response" style="display:none" onclick="switchDrawerTab('response', this)">Response</button>
+    <button class="drawer-tab" id="drawer-tab-thinking" style="display:none" onclick="switchDrawerTab('thinking', this)">Thinking</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-panel active" id="dpanel-prompt"></div>
+    <div class="drawer-panel" id="dpanel-code"></div>
+    <div class="drawer-panel" id="dpanel-findings"></div>
+    <div class="drawer-panel" id="dpanel-response"></div>
+    <div class="drawer-panel" id="dpanel-thinking"></div>
+  </div>
+</div>
+
+<script>
+// ── Step content registry ───────────────────────────────────────────────────
+
+const STEP_INFO = {
+  1: {
+    badge: '1',
+    title: 'Live Web Intel — You.com Web Search',
+    prompt: {
+      label: 'Search Query',
+      note: null,
+      text: '{company} news funding product launch hiring 2026 recent last 4 weeks as of {today}',
+    },
+    code: `def enrich(company: str, ydc_key: str) -> dict:
+    query = f"{company} news funding product launch hiring 2025"
+    t0 = time.time()
+
+    resp = requests.get(
+        "https://ydc-index.io/v1/search",
+        headers={"X-API-Key": ydc_key},
+        params={"query": query, "num_web_results": 5},
+        timeout=20,
+    )
+    data = resp.json()
+
+    # Response: {"results": {"news": [...], "web": [...]}}
+    results = data.get("results", {})
+    hits = results.get("news", []) + results.get("web", [])
+
+    # Deduplicate by URL, keep top 6
+    seen, deduped = set(), []
+    for h in hits:
+        u = h.get("url", "")
+        if u and u not in seen:
+            seen.add(u)
+            deduped.append({
+                "title":       h.get("title", ""),
+                "url":         u,
+                "description": h.get("description", ""),
+                "page_age":    h.get("page_age", ""),
+            })
+    return {"company": company, "hits": deduped[:6],
+            "latency_ms": round((time.time() - t0) * 1000)}`,
+    findings: [
+      { icon: '🔍', text: '<strong>Response shape is nested</strong> — hits live at <code>results.news</code> + <code>results.web</code>, not a top-level <code>hits</code> array. Using <code>data.get("hits", [])</code> silently returns nothing.' },
+      { icon: '🔗', text: '<strong>URL deduplication matters</strong> — news and web feeds can return the same URL. Without dedup, the brief model sees duplicated context and over-weights repeated articles.' },
+      { icon: '🧹', text: '<strong>Livecrawl stripdown (backend)</strong> — when livecrawl is on, <code>_clean_markdown()</code> strips headers, links, bullet markers, nav-length lines (&lt;40 chars), and collapses whitespace before truncating to 1,500 chars. Raw markdown sent as-is produces nav/boilerplate noise that confuses the brief model; cleaned prose improves signal extraction significantly. Toggle: set <code>livecrawl=False</code> to skip crawl entirely and use snippet descriptions.' },
+    ],
+  },
+  2: {
+    badge: '2',
+    title: 'Parasail Sales Signals — Summarization Model',
+    prompt: {
+      label: 'System Prompt',
+      note: 'Sent as the system message. The search results are appended as the user message.',
+      text: `You are a sales intelligence analyst working for Parasail — an AI inference cloud.
+Parasail sells: serverless open-model inference (2M+ Hugging Face models, OpenAI-compatible API),
+dedicated endpoints, batch inference, and flexible GPU capacity — at up to 30x lower cost than
+hyperscalers, with no hidden quantization, same-day deployments, and a dedicated Slack support channel.
+
+From the search results, produce 4–6 bullet points that surface SIGNALS relevant to a Parasail sales pitch:
+AI/ML initiatives underway, LLM or inference spend, cloud cost pressures, open-source model usage,
+recent AI product launches, hiring for ML engineers, or partnerships with AI vendors.
+Each bullet starts with '•' on its own line.
+Include specific figures, dates, and names. Tie each point to why it matters for Parasail.
+No preamble, no explanation, no headers.
+First character of your response must be '•'.`,
+    },
+    code: `def brief_stream(company: str, hits: list, model: str):
+    context = "\\n\\n".join(
+        f"[{i}] {h['title']}\\n{h['description']}\\n{h['url']}"
+        for i, h in enumerate(hits[:6], 1)
+    ) or "No search results available."
+
+    yield from _llm_stream(
+        system=_BRIEF_SYSTEM,
+        user=f"Company: {company}\\n\\nSearch results:\\n{context}",
+        model=model,
+        label=f"brief[{company}]",
+    )
+
+# Shared LLM call (non-streaming + re-emit)
+def _llm_stream(system, user, model, label):
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user},
+        ],
+        max_tokens=1500,
+        temperature=0.3,
+        stream=False,   # ← non-streaming; see Findings
+    )
+    msg  = resp.choices[0].message
+    # Reasoning models put output in model_extra['reasoning']
+    text = msg.content or (msg.model_extra or {}).get("reasoning", "") or ""
+    for i in range(0, len(text), 8):
+        yield {"event": "token", "text": text[i:i+8]}
+    yield {"event": "done",
+           "input_tokens":  resp.usage.prompt_tokens,
+           "output_tokens": resp.usage.completion_tokens}`,
+    findings: [
+      { icon: '🧠', text: '<strong>GPT-OSS 20B is a reasoning model</strong> — <code>message.content</code> is <code>None</code>. The full output lives in <code>message.model_extra[\'reasoning\']</code>. Standard OpenAI SDK code silently returns an empty string.' },
+      { icon: '✂️', text: '<strong><code>max_tokens=500</code> cut off mid-thought</strong> — reasoning models burn tokens on chain-of-thought before producing output. At 500 tokens the model ran out while still thinking, so no bullets ever appeared. Bumped to 1500.' },
+      { icon: '📝', text: '<strong>Soft prompts weren\'t enough</strong> — "Output ONLY bullets" didn\'t suppress the thinking narration. Adding "Do not narrate your reasoning" + "First character must be \'•\'" gave the model a concrete anchor to start from.' },
+    ],
+  },
+  3: {
+    badge: '3',
+    title: 'Parasail Pitch Email — Generation Model',
+    prompt: {
+      label: 'System Prompt',
+      note: 'The sales signals from Step 2 are passed as the user message context.',
+      text: `You are writing a cold outreach email on behalf of Parasail (parasail.io) — an AI inference cloud.
+Parasail's pitch: serverless inference across 2M+ open-weight models, OpenAI-compatible API,
+up to 30x cheaper than hyperscalers, no hidden quantization, same-day deployments, dedicated Slack support.
+Flexible tiers: Serverless, Dedicated Serverless, Dedicated GPU, and Batch (lowest cost for evals/embeddings).
+
+Output ONLY the email, starting immediately with 'Subject:'.
+Format exactly:
+Subject: <subject line referencing something specific about this company>
+
+<opener: 1-2 sentences referencing a specific AI signal — show you did your homework>
+
+<value prop: 2-3 sentences connecting their situation to what Parasail solves — cost, scale, model variety, or speed>
+
+<CTA: one concrete ask — 15-min call, free trial, or benchmark offer>
+
+No fluff. No sign-off placeholder. Sound human, not templated.
+First word of your response must be 'Subject'.`,
+    },
+    code: `def email_stream(company: str, brief: str, model: str):
+    yield from _llm_stream(
+        system=_EMAIL_SYSTEM,
+        user=f"Company: {company}\\n\\nIntel Brief:\\n{brief}",
+        model=model,
+        label=f"email:{company}",
+    )`,
+    findings: [
+      { icon: '🔁', text: '<strong><code>stream_options={"include_usage": True}</code> broke token streaming</strong> — adding this Parasail-side caused every chunk\'s <code>delta.content</code> to be empty. Tokens were generated (usage confirmed it) but never reached the client. Removed it entirely.' },
+      { icon: '🧠', text: '<strong>Same reasoning model issue applies</strong> — email model also puts output in <code>reasoning</code>. The <code>_llm_stream</code> helper handles both steps identically with the <code>msg.content or reasoning</code> fallback.' },
+    ],
+  },
+};
+
+let _activeDrawerStep = null;
+let _activeDrawerSlug = null;
+
+function openCodeDrawer(stepNum, btnEl, slug) {
+  const info = STEP_INFO[stepNum];
+  if (!info) return;
+
+  // Toggle off if same step+slug clicked again
+  if (_activeDrawerStep === stepNum && _activeDrawerSlug === (slug || null)) {
+    closeCodeDrawer();
+    return;
+  }
+
+  document.querySelectorAll('.pipe-code-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  _activeDrawerStep = stepNum;
+  _activeDrawerSlug = slug || null;
+  document.getElementById('drawer-badge').textContent = info.badge;
+  document.getElementById('drawer-title').textContent = info.title;
+
+  // Populate prompt panel
+  const pp = document.getElementById('dpanel-prompt');
+  const promptNote = info.prompt.note
+    ? `<p style="font-size:12px;color:var(--muted);margin-bottom:12px">${info.prompt.note}</p>`
+    : '';
+  // For steps 2 & 3, append the actual user message assembled from hits so you can
+  // verify what context was passed to the LLM — including livecrawl content.
+  let userMsgHtml = '';
+  if (stepNum === 2 && slug && _pHits[slug]) {
+    const hits = _pHits[slug];
+    const context = hits.slice(0, 6).map((h, i) =>
+      `[${i+1}] ${h.title}\n${h.livecrawl_content || h.description}\n${h.url}`
+    ).join('\n\n') || 'No search results available.';
+    const totalChars = hits.reduce((s, h) => s + ((h.livecrawl_content || h.description)?.length || 0), 0);
+    const withContent = hits.filter(h => h.livecrawl_content).length;
+    userMsgHtml = `
+      <div class="drawer-label" style="margin-top:20px">User Message — assembled context (${hits.length} hits · ${totalChars.toLocaleString()} chars · ${withContent} with livecrawl content)</div>
+      <div class="code-block" style="background:#f0fdf4;color:#14532d;border:1px solid #bbf7d0;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nSearch results:\n${context}`)}</div>
+    `;
+  }
+  if (stepNum === 3 && slug && _pBriefs && _pBriefs[slug]) {
+    userMsgHtml = `
+      <div class="drawer-label" style="margin-top:20px">User Message — brief passed to email LLM</div>
+      <div class="code-block" style="background:#f0fdf4;color:#14532d;border:1px solid #bbf7d0;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nIntel Brief:\n${_pBriefs[slug]}`)}</div>
+    `;
+  }
+
+  pp.innerHTML = `
+    <div class="drawer-label">${info.prompt.label}</div>
+    ${promptNote}
+    <div class="code-block" style="background:#f5f3ff;color:#3b0764;border:1px solid #ddd6fe">${_esc(info.prompt.text)}</div>
+    ${userMsgHtml}
+  `;
+
+  // Populate code panel
+  document.getElementById('dpanel-code').innerHTML = `
+    <div class="drawer-label">Python — agents/pipeline_agent.py</div>
+    <div class="code-block">${_syntaxHL(info.code)}</div>
+  `;
+
+  // Populate findings panel
+  const findingsHtml = info.findings.map(f => `
+    <div class="drawer-finding">${f.icon} ${f.text}</div>
+  `).join('');
+  document.getElementById('dpanel-findings').innerHTML = `
+    <div class="drawer-label">${info.findings.length} finding${info.findings.length !== 1 ? 's' : ''} from this build</div>
+    ${findingsHtml}
+  `;
+
+  // Response tab — only for step 1, only when data is available
+  const responseTab = document.getElementById('drawer-tab-response');
+  const responsePanel = document.getElementById('dpanel-response');
+  if (stepNum === 1 && slug && _pRawData[slug]) {
+    responseTab.style.display = '';
+    responsePanel.innerHTML = `<div class="drawer-label">You.com API Response</div>
+      <div class="jt" id="drawer-jtree-${slug}" style="font-size:11.5px;line-height:1.7;overflow-x:auto"></div>`;
+    const treeEl = document.getElementById(`drawer-jtree-${slug}`);
+    treeEl.appendChild(_buildJsonNode(_pRawData[slug], 0, true));
+  } else {
+    responseTab.style.display = 'none';
+    responsePanel.innerHTML = '';
+  }
+
+  // Thinking tab — steps 2 and 3 when thinking text was captured
+  const thinkingTab = document.getElementById('drawer-tab-thinking');
+  const thinkingPanel = document.getElementById('dpanel-thinking');
+  const thinkingKey = stepNum === 2 ? `brief:${slug}` : stepNum === 3 ? `email:${slug}` : null;
+  const thinkingText = thinkingKey ? _pThinking[thinkingKey] : null;
+  if (thinkingKey && thinkingKey in _pThinking) {
+    thinkingTab.style.display = '';
+    const txt = _pThinking[thinkingKey];
+    thinkingPanel.innerHTML = txt
+      ? `<div class="drawer-label">Model Reasoning Chain</div>
+         <p class="thinking-meta">Raw chain-of-thought captured from the <code>reasoning</code> field before output stripping.</p>
+         <div class="thinking-block">${_esc(txt)}</div>`
+      : `<div class="drawer-label">Model Reasoning Chain</div>
+         <p class="thinking-meta" style="color:var(--muted)">No preamble — model went straight to output without narrating its reasoning.</p>`;
+  } else {
+    thinkingTab.style.display = 'none';
+    thinkingPanel.innerHTML = '';
+  }
+
+  // Wrap all code blocks with copy buttons
+  _wrapCodeBlocks(document.getElementById('code-drawer'));
+
+  // Reset to prompt tab
+  switchDrawerTab('prompt');
+  document.getElementById('code-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+
+function openAskDrawer(btnEl) {
+  // Toggle off if already open for ask
+  if (_activeDrawerStep === 'ask') {
+    closeCodeDrawer();
+    return;
+  }
+
+  document.querySelectorAll('.pipe-code-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  _activeDrawerStep = 'ask';
+  _activeDrawerSlug = null;
+  document.getElementById('drawer-badge').textContent = '?';
+  document.getElementById('drawer-title').textContent = 'Grounded Inference';
+
+  const src = _sourceData || {};
+
+  // Prompt panel — system prompt
+  document.getElementById('dpanel-prompt').innerHTML = `
+    <div class="drawer-label">System Prompt — search_tool.py · SYSTEM_PROMPT</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+      Injected at the start of every Grounded Inference request. Instructs the model
+      when to search, how many rounds, and how to cite sources.
+    </p>
+    <div class="code-block" style="background:#f5f3ff;color:#3b0764;border:1px solid #ddd6fe">${_esc(src.system_prompt || '(not loaded)')}</div>
+  `;
+
+  // Code panel — toggle routing first, then agent + search tool
+  const sseAskCode   = src._sse_ask    || '(not loaded)';
+  const sseDirectCode = src._sse_direct || '(not loaded)';
+  const agentCode    = src.parasail_agent  || '(not loaded)';
+  const searchCode   = src.execute_search  || '(not loaded)';
+  document.getElementById('dpanel-code').innerHTML = `
+    <div class="drawer-label">Python — server.py · _sse_ask &nbsp;<span style="font-size:11px;color:var(--muted);font-weight:400">← You.com Search toggle branches here</span></div>
+    <div class="code-block">${_syntaxHL(sseAskCode)}</div>
+    <div class="drawer-label" style="margin-top:20px">Python — server.py · _sse_direct &nbsp;<span style="font-size:11px;color:var(--muted);font-weight:400">← called when Search is OFF</span></div>
+    <div class="code-block">${_syntaxHL(sseDirectCode)}</div>
+    <div class="drawer-label" style="margin-top:20px">Python — agents/parasail_agent.py · ParasailAgent &nbsp;<span style="font-size:11px;color:var(--muted);font-weight:400">← called when Search is ON</span></div>
+    <div class="code-block">${_syntaxHL(agentCode)}</div>
+    <div class="drawer-label" style="margin-top:20px">Python — search_tool.py · execute_search &nbsp;<span style="font-size:11px;color:var(--muted);font-weight:400">← invoked by the LLM via tool_use</span></div>
+    <div class="code-block">${_syntaxHL(searchCode)}</div>
+  `;
+
+  // Findings panel
+  document.getElementById('dpanel-findings').innerHTML = `
+    <div class="drawer-label">How it works</div>
+    <div class="drawer-finding">🔍 You.com Smart Search called once per tool_call round — up to MAX_TOOL_ROUNDS</div>
+    <div class="drawer-finding">🤖 Parasail LLM decides when to search and what to query via OpenAI-compatible tool_use</div>
+    <div class="drawer-finding">📎 Sources extracted from search results and injected as citation markers in the final answer</div>
+    <div class="drawer-finding">💬 Prior turns passed as context in multi-turn Chat — the model remembers what was discussed</div>
+  `;
+
+  // Hide response + thinking tabs (not applicable here)
+  document.getElementById('drawer-tab-response').style.display = 'none';
+  document.getElementById('dpanel-response').innerHTML = '';
+  document.getElementById('drawer-tab-thinking').style.display = 'none';
+  document.getElementById('dpanel-thinking').innerHTML = '';
+
+  _wrapCodeBlocks(document.getElementById('code-drawer'));
+  switchDrawerTab('prompt');
+  document.getElementById('code-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+
+// ── Copy button for code blocks ──────────────────────────────────────────────
+function copyCode(btn) {
+  const block = btn.nextElementSibling;
+  navigator.clipboard.writeText(block.innerText).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function _wrapCodeBlocks(container) {
+  container.querySelectorAll('.code-block').forEach(block => {
+    if (block.parentElement.classList.contains('code-block-wrap')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block-wrap';
+    const btn = document.createElement('button');
+    btn.className = 'code-copy-btn';
+    btn.textContent = 'Copy';
+    btn.setAttribute('onclick', 'copyCode(this)');
+    block.parentNode.insertBefore(wrap, block);
+    wrap.appendChild(btn);
+    wrap.appendChild(block);
+  });
+}
+
+function closeCodeDrawer() {
+  document.getElementById('code-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.querySelectorAll('.pipe-code-btn').forEach(b => b.classList.remove('active'));
+  _activeDrawerStep = null;
+}
+
+function switchDrawerTab(name, btnEl) {
+  document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.drawer-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('dpanel-' + name).classList.add('active');
+  if (btnEl) { btnEl.classList.add('active'); return; }
+  document.querySelectorAll('.drawer-tab').forEach(t => {
+    if (t.getAttribute('onclick')?.includes("'" + name + "'")) t.classList.add('active');
+  });
+}
+
+function _esc(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _syntaxHL(code) {
+  return _esc(code)
+    .replace(/\b(def|return|for|if|or|and|not|in|from|import|yield|class|try|except|raise)\b/g,
+             '<span class="ck">$1</span>')
+    .replace(/(f?&quot;[^&]*?&quot;|f?&#39;[^&#]*?&#39;)/g,
+             '<span class="cs">$1</span>')
+    .replace(/(#[^\n]*)/g, '<span class="cc">$1</span>')
+    .replace(/\b(\d+)\b/g, '<span class="cn">$1</span>');
+}
+</script>
+</body>
+</html>
