@@ -2873,7 +2873,7 @@ async function _enrichCompany(company) {
       <div class="pipe-action-bar" id="paction1-${slug}">
         <span style="font-size:13px;color:var(--muted)">Review the sources above, then surface Parasail sales signals.</span>
         <button class="pipe-action-btn" data-company="${_esc(company)}" data-slug="${_esc(slug)}" onclick="generateBrief(this.dataset.company,this.dataset.slug)">
-          Surface Sales Signals →
+          2. Surface Sales Signals →
         </button>
       </div>
     `);
@@ -2961,7 +2961,7 @@ async function generateBrief(company, slug) {
     <div class="pipe-action-bar" id="paction2-${slug}">
       <span style="font-size:13px;color:var(--muted)">Edit signals if needed, then draft the Parasail pitch.</span>
       <button class="pipe-action-btn" data-company="${_esc(company)}" data-slug="${_esc(slug)}" onclick="generateEmail(this.dataset.company,this.dataset.slug)">
-        Draft Pitch Email →
+        3. Draft Pitch Email →
       </button>
     </div>
   `);
