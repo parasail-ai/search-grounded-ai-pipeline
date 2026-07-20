@@ -405,8 +405,7 @@
     white-space: pre-wrap; line-height: 1.6;
   }
 
-  /* ─── Streaming pulse ────────────────────────────────────────────── */
-  .streaming-border { border-color: var(--accent) !important; }
+
 
   .spinner {
     display: inline-block; width: 14px; height: 14px;
@@ -536,7 +535,7 @@
     font-family: 'SF Mono','Fira Mono',monospace; font-size: 11.5px; line-height: 1.7;
   }
   .chat-request-body.open { display: block; }
-  .chat-searches-toggle { display: none; } /* replaced by footer chips */
+
   /* JSON tree */
   /* ─── Tooltips ──────────────────────────────────────────────────── */
   .tip {
@@ -2466,7 +2465,6 @@ function updateChatStats(stats, costs, model, pricing) {
   _chatTotals.llm        += costs?.llm || 0;
   _chatTotals.search     += costs?.search || 0;
   _chatTotals.livecrawl  += costs?.livecrawl_overage || 0;
-  if (pricing) _chatPricing = pricing;
 
   const total = _chatTotals.input + _chatTotals.output;
   document.getElementById('chat-stats-bar').style.display = '';
@@ -2554,9 +2552,6 @@ async function chatSend() {
   const searchesBody = document.getElementById(`${turnId}-searches`);
   const requestBody = document.getElementById(`${turnId}-request`);
   const footer = document.getElementById(`${turnId}-footer`);
-  // meta is unused now but kept for compat
-  const meta = { innerHTML: '' };
-
   // Build and store the request payload for display — show chip immediately
   const requestPayload = { model, question, prior_messages: _chatHistory, search_enabled: document.getElementById('chat-search-track').classList.contains('on') };
   requestBody.appendChild(buildJsonTree(requestPayload));
@@ -2876,7 +2871,6 @@ async function generateBrief(company, slug) {
   const hits = _pHits[slug] || [];
 
   document.getElementById(`paction1-${slug}`)?.remove();
-  _dotDone(slug, 1);
   _dotActive(slug, 2);
 
   const card = document.getElementById(`pcard-${slug}`);
@@ -3224,10 +3218,6 @@ function togglePipeStep(bodyId, headerEl) {
   if (arrow) arrow.textContent = collapsed ? '▾' : '▸';
 }
 
-function toggleCardSection(id) {
-  document.getElementById(id).classList.toggle('collapsed');
-}
-
 let _sourceData = null;
 
 async function loadSource() {
@@ -3524,7 +3514,6 @@ function openCodeDrawer(stepNum, btnEl, slug) {
   const thinkingTab = document.getElementById('drawer-tab-thinking');
   const thinkingPanel = document.getElementById('dpanel-thinking');
   const thinkingKey = stepNum === 2 ? `brief:${slug}` : stepNum === 3 ? `email:${slug}` : null;
-  const thinkingText = thinkingKey ? _pThinking[thinkingKey] : null;
   if (thinkingKey && thinkingKey in _pThinking) {
     thinkingTab.style.display = '';
     const txt = _pThinking[thinkingKey];
