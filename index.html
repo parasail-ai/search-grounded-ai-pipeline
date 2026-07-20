@@ -581,13 +581,14 @@
 
   /* ─── Pipeline hero ─────────────────────────────────────────────── */
   .pipeline-hero {
-    background: linear-gradient(135deg, var(--primary-100) 0%, #f5f3ff 60%, var(--band) 100%);
-    border-bottom: 1px solid var(--primary-200);
-    padding: 32px 0 28px;
+    padding: 20px 24px;
   }
   .pipeline-hero-inner {
-    max-width: 860px; margin: 0 auto; padding: 0 24px;
+    max-width: 860px; margin: 0 auto; padding: 20px 24px;
     display: flex; gap: 48px; align-items: flex-start;
+    background: linear-gradient(135deg, var(--primary-100) 0%, #f5f3ff 60%, var(--band) 100%);
+    border: 1px solid var(--primary-200);
+    border-radius: 12px;
   }
   .pipeline-hero-text { flex: 1; }
   .pipeline-hero-eyebrow {
@@ -921,8 +922,6 @@
   .drawer-section-hdr:hover .drawer-section-arrow { color: var(--primary); }
   .drawer-section-body { display: none; padding-top: 10px; }
   .drawer-section.open .drawer-section-body { display: block; }
-  .drawer-section.open .drawer-section-arrow::before { content: '▾'; }
-  .drawer-section:not(.open) .drawer-section-arrow::before { content: '▸'; }
   .drawer-finding {
     background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
     padding: 10px 14px; margin-bottom: 16px; font-size: 12px;
@@ -3478,11 +3477,7 @@ function openCodeDrawer(stepNum, btnEl, slug) {
 
   // Populate prompt panel
   const pp = document.getElementById('dpanel-prompt');
-  const promptNote = info.prompt.note
-    ? `<p style="font-size:12px;color:var(--muted);margin-bottom:12px">${info.prompt.note}</p>`
-    : '';
-  // For steps 2 & 3, append the actual user message assembled from hits so you can
-  // verify what context was passed to the LLM — including livecrawl content.
+  // For steps 2 & 3, show the actual user message assembled at runtime
   let userMsgHtml = '';
   if (stepNum === 2 && slug && _pHits[slug]) {
     const hits = _pHits[slug];
@@ -3492,25 +3487,26 @@ function openCodeDrawer(stepNum, btnEl, slug) {
     const totalChars = hits.reduce((s, h) => s + ((h.livecrawl_content || h.description)?.length || 0), 0);
     const withContent = hits.filter(h => h.livecrawl_content).length;
     userMsgHtml = _ds(
-      `User Message — ${hits.length} hits · ${totalChars.toLocaleString()} chars · ${withContent} with livecrawl`,
-      `<span style="color:#14532d;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nSearch results:\n${context}`)}</span>`
+      'User Message — search_tool.py · results',
+      `<span style="color:#14532d;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nSearch results:\n${context}`)}</span>`,
+      `${hits.length} hits · ${totalChars.toLocaleString()} chars · ${withContent} with livecrawl — assembled at runtime and appended after the system prompt`
     );
   }
   if (stepNum === 3 && slug && _pBriefs && _pBriefs[slug]) {
     userMsgHtml = _ds(
-      'User Message — brief passed to email LLM',
-      `<span style="color:#14532d;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nIntel Brief:\n${_pBriefs[slug]}`)}</span>`
+      'User Message — agents/pipeline_agent.py · brief',
+      `<span style="color:#14532d;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nIntel Brief:\n${_pBriefs[slug]}`)}</span>`,
+      'the edited brief from step 2, appended after the system prompt'
     );
   }
 
   pp.innerHTML =
-    _ds(info.prompt.label, `<span style="color:#3b0764;white-space:pre-wrap;word-break:break-word">${_esc(info.prompt.text)}</span>`) +
-    (promptNote ? `<div style="margin-top:8px;font-size:12px;color:var(--muted)">${promptNote}</div>` : '') +
+    _ds(info.prompt.label, `<span style="color:#3b0764;white-space:pre-wrap;word-break:break-word">${_esc(info.prompt.text)}</span>`, info.prompt.note || null) +
     userMsgHtml;
 
   // Populate code panel
   document.getElementById('dpanel-code').innerHTML =
-    _ds('Python — agents/pipeline_agent.py', _syntaxHL(info.code));
+    _ds('Python — agents/pipeline_agent.py', _syntaxHL(info.code), `server-side implementation for step ${stepNum}`);
 
   // Populate findings panel
   const findingsHtml = info.findings.map(f => `
@@ -3582,18 +3578,19 @@ function openAskDrawer(btnEl) {
   // Prompt panel — system prompt
   document.getElementById('dpanel-prompt').innerHTML =
     _ds('System Prompt — search_tool.py · SYSTEM_PROMPT',
-      `<span style="color:#3b0764;white-space:pre-wrap;word-break:break-word">${_esc(src.system_prompt || '(not loaded)')}</span>`);
+      `<span style="color:#3b0764;white-space:pre-wrap;word-break:break-word">${_esc(src.system_prompt || '(not loaded)')}</span>`,
+      'injected at the start of every request — tells the model when to search and how to cite sources');
 
   // Code panel — toggle routing first, then agent + search tool
-  const sseAskCode   = src._sse_ask    || '(not loaded)';
-  const sseDirectCode = src._sse_direct || '(not loaded)';
-  const agentCode    = src.parasail_agent  || '(not loaded)';
-  const searchCode   = src.execute_search  || '(not loaded)';
+  const sseAskCode    = src._sse_ask       || '(not loaded)';
+  const sseDirectCode = src._sse_direct    || '(not loaded)';
+  const agentCode     = src.parasail_agent || '(not loaded)';
+  const searchCode    = src.execute_search || '(not loaded)';
   document.getElementById('dpanel-code').innerHTML =
-    _ds('Python — server.py · _sse_ask &nbsp;<span style="font-size:11px;font-weight:400">← Search toggle branches here</span>', _syntaxHL(sseAskCode)) +
-    _ds('Python — server.py · _sse_direct &nbsp;<span style="font-size:11px;font-weight:400">← Search OFF path</span>', _syntaxHL(sseDirectCode)) +
-    _ds('Python — agents/parasail_agent.py · ParasailAgent &nbsp;<span style="font-size:11px;font-weight:400">← Search ON path</span>', _syntaxHL(agentCode)) +
-    _ds('Python — search_tool.py · execute_search &nbsp;<span style="font-size:11px;font-weight:400">← invoked by the LLM via tool_use</span>', _syntaxHL(searchCode));
+    _ds('Python — server.py · _sse_ask',    _syntaxHL(sseAskCode),    'entry point — branches on search toggle') +
+    _ds('Python — server.py · _sse_direct', _syntaxHL(sseDirectCode), 'called when You.com Web Search is OFF') +
+    _ds('Python — agents/parasail_agent.py · ParasailAgent', _syntaxHL(agentCode), 'called when You.com Web Search is ON — drives the search → LLM loop') +
+    _ds('Python — search_tool.py · execute_search', _syntaxHL(searchCode), 'invoked by the LLM via tool_use — calls You.com and returns formatted results');
 
   // Findings panel
   document.getElementById('dpanel-findings').innerHTML = `
@@ -3627,11 +3624,12 @@ function copyCode(btn) {
 }
 
 // Collapsible drawer code section — label + code block, starts collapsed
-function _ds(label, codeHtml) {
+function _ds(label, codeHtml, note) {
+  const noteHtml = note ? `<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:6px">&nbsp;← ${note}</span>` : '';
   return `<div class="drawer-section">
-    <div class="drawer-section-hdr" onclick="if(event.target.closest('.ds-copy'))return;this.parentElement.classList.toggle('open')">
-      <span class="drawer-section-arrow"></span>
-      <span class="drawer-section-title">${label}</span>
+    <div class="drawer-section-hdr" onclick="if(event.target.closest('.ds-copy'))return;const s=this.parentElement;s.classList.toggle('open');this.querySelector('.drawer-section-arrow').textContent=s.classList.contains('open')?'▾':'▸'">
+      <span class="drawer-section-arrow">▸</span>
+      <span class="drawer-section-title">${label}${noteHtml}</span>
       <button class="ds-copy pipe-code-btn" style="margin-left:auto;font-size:10px;padding:2px 8px"
         onclick="const b=this.closest('.drawer-section').querySelector('.code-block');navigator.clipboard.writeText(b?.innerText||'').then(()=>{this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1800)})">Copy</button>
     </div>
