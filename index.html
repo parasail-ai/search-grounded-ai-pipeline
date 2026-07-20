@@ -1137,25 +1137,24 @@
       </div>
     </div>
   </div>
-  <!-- Hero strip — same pattern as Ask and Pipeline -->
-  <div class="pipeline-hero" id="chat-hero" style="padding:18px 0 14px;flex-shrink:0">
-    <div class="pipeline-hero-inner">
-      <div class="pipeline-hero-text">
-        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Research Chat</div>
-        <h2 class="pipeline-hero-title" style="font-size:18px;margin-bottom:8px">A research assistant that searches the web and remembers what you discussed</h2>
-        <div class="pipeline-hero-steps">
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
-        </div>
-        <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
-          Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
+  <div class="chat-thread" id="chat-thread">
+    <!-- Hero strip — lives inside the thread so it scrolls away when conversation starts -->
+    <div class="pipeline-hero" id="chat-hero" style="padding:18px 0 14px;flex-shrink:0;margin-bottom:0">
+      <div class="pipeline-hero-inner">
+        <div class="pipeline-hero-text">
+          <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Research Chat</div>
+          <h2 class="pipeline-hero-title" style="font-size:18px;margin-bottom:8px">A research assistant that searches the web and remembers what you discussed</h2>
+          <div class="pipeline-hero-steps">
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
+          </div>
+          <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
+            Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="chat-thread" id="chat-thread">
   </div>
   <div class="chat-composer">
     <div class="chat-composer-inner">
@@ -2505,9 +2504,11 @@ function chatNew() {
   _chatHistory = [];
   _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0, llm: 0, search: 0, livecrawl: 0 };
   document.getElementById('chat-stats-bar').style.display = 'none';
-  document.getElementById('chat-hero').style.display = '';
+  const hero = document.getElementById('chat-hero');
+  if (hero) hero.style.display = '';
+  // Remove all thread children except the hero
   const thread = document.getElementById('chat-thread');
-  thread.innerHTML = '';
+  Array.from(thread.children).forEach(c => { if (c.id !== 'chat-hero') c.remove(); });
 }
 
 function chatStop() {
@@ -3297,9 +3298,9 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="drawer-tabs" id="drawer-tabs">
     <button class="drawer-tab active" onclick="switchDrawerTab('prompt', this)">Prompt</button>
     <button class="drawer-tab" onclick="switchDrawerTab('code', this)">Code</button>
-    <button class="drawer-tab" onclick="switchDrawerTab('findings', this)">Findings</button>
     <button class="drawer-tab" id="drawer-tab-response" style="display:none" onclick="switchDrawerTab('response', this)">Response</button>
     <button class="drawer-tab" id="drawer-tab-thinking" style="display:none" onclick="switchDrawerTab('thinking', this)">Thinking</button>
+    <button class="drawer-tab" onclick="switchDrawerTab('findings', this)">Findings</button>
   </div>
   <div class="drawer-body">
     <div class="drawer-panel active" id="dpanel-prompt"></div>
