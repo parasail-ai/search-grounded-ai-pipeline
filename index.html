@@ -1922,7 +1922,10 @@ function toggleSection(id, headerEl) {
 }
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
-let traceEl, answerEl, sourcesEl;
+// Resolved from DOM at call time to avoid stale refs after results.innerHTML = ''
+function _traceEl()   { return document.getElementById('trace'); }
+function _answerEl()  { return document.getElementById('answer'); }
+function _sourcesEl() { return document.getElementById('sources'); }
 
 function handleEvent(ev) {
   const results = document.getElementById('results');
@@ -2030,15 +2033,12 @@ function handleEvent(ev) {
         </div>
       </div>
     `;
-    traceEl = document.getElementById('trace');
-    answerEl = document.getElementById('answer');
-    sourcesEl = document.getElementById('sources');
   }
 
   else if (ev.event === 'tool_call') {
     const gi = document.getElementById('generating-indicator');
     if (gi) gi.style.display = 'flex';
-    const searchCount = traceEl.querySelectorAll('.trace-item.search').length + 1;
+    const searchCount = (_traceEl()?.querySelectorAll('.trace-item.search').length ?? 0) + 1;
     const badge = document.getElementById('search-count-badge');
     if (badge) badge.textContent = searchCount;
     const statSearches = document.getElementById('stat-searches');
@@ -2049,7 +2049,7 @@ function handleEvent(ev) {
     const queryHtml = ev.query
       ? `"${_esc(ev.query)}"`
       : `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-weight:400;font-size:12px">${_esc((params.url||'').replace(/^https?:\/\//,'').substring(0,60))}${(params.url||'').length>67?'…':''}</span>`;
-    traceEl.insertAdjacentHTML('beforeend', `
+    _traceEl()?.insertAdjacentHTML('beforeend', `
       <div class="trace-item search">
         <span class="trace-icon">🔍</span>
         <div class="trace-content">
@@ -2061,7 +2061,7 @@ function handleEvent(ev) {
   }
 
   else if (ev.event === 'search_result') {
-    const lastSearch = traceEl.querySelector('.trace-item.search:last-child');
+    const lastSearch = _traceEl()?.querySelector('.trace-item.search:last-child');
     if (lastSearch) {
       lastSearch.insertAdjacentHTML('afterend', `
         <div class="trace-item result">
@@ -2081,7 +2081,8 @@ function handleEvent(ev) {
     // Show response section
     const secResponse = document.getElementById('sec-response');
     if (secResponse) secResponse.style.display = 'block';
-    answerEl.innerHTML = ev.text ? renderMarkdown(ev.text) : '(no answer)';
+    const answerEl = _answerEl();
+    if (answerEl) answerEl.innerHTML = ev.text ? renderMarkdown(ev.text) : '(no answer)';
 
     // Populate raw section
     const secRaw = document.getElementById('sec-raw');
@@ -2104,7 +2105,8 @@ function handleEvent(ev) {
       if (secSources) secSources.style.display = 'block';
       const badge = document.getElementById('source-count-badge');
       if (badge) badge.textContent = ev.sources.length;
-      sourcesEl.innerHTML = ev.sources.map((url, i) => `
+      const sourcesEl = _sourcesEl();
+      if (sourcesEl) sourcesEl.innerHTML = ev.sources.map((url, i) => `
         <div class="source-item">
           <span class="source-num">[${i+1}]</span>
           <a class="source-url" href="${_escUrl(url)}" target="_blank" rel="noopener noreferrer">${_esc(url)}</a>
@@ -2979,6 +2981,11 @@ async function generateEmail(company, slug) {
   card.scrollIntoView({behavior:'smooth', block:'nearest'});
 
   let fullText = '';
+  // Stream raw text into a <pre> incrementally; render structured email once streaming is done
+  const emailStreamEl = document.createElement('pre');
+  emailStreamEl.style.cssText = 'margin:0;white-space:pre-wrap;word-break:break-word;font-size:13px;color:var(--text)';
+  const step3Body = document.getElementById(`pstep3-body-${slug}`);
+  if (step3Body) { step3Body.innerHTML = ''; step3Body.appendChild(emailStreamEl); }
 
   try {
     const res = await fetch('/api/pipeline/email', {
@@ -2999,8 +3006,7 @@ async function generateEmail(company, slug) {
         const ev = JSON.parse(part.slice(5).trim());
         if (ev.event === 'token') {
           fullText += ev.text;
-          const body = document.getElementById(`pstep3-body-${slug}`);
-          if (body) body.innerHTML = _renderEmail(fullText);
+          emailStreamEl.textContent = fullText;
         }
         else if (ev.event === 'thinking') { _pThinking[`email:${slug}`] = ev.text; console.log('[thinking] email captured', ev.text.length, 'chars'); }
         else if (ev.event === 'done') { _addPipeTokens(ev.input_tokens || 0, ev.output_tokens || 0, ev.pricing); }
@@ -3012,6 +3018,10 @@ async function generateEmail(company, slug) {
     if (body) body.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red);margin:0">✕ ${e.message}</div>`;
     return;
   }
+
+  // Streaming done — do one final structured render (Subject / body split)
+  const step3BodyFinal = document.getElementById(`pstep3-body-${slug}`);
+  if (step3BodyFinal) step3BodyFinal.innerHTML = _renderEmail(fullText);
 
   document.getElementById(`pspinner3-${slug}`)?.remove();
   _dotDone(slug, 3);
