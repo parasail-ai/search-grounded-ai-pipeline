@@ -581,10 +581,11 @@
 
   /* ─── Pipeline hero ─────────────────────────────────────────────── */
   .pipeline-hero {
-    padding: 20px 24px;
+    padding: 16px 24px;
+    flex-shrink: 0;
   }
   .pipeline-hero-inner {
-    max-width: 860px; margin: 0 auto; padding: 20px 24px;
+    max-width: 860px; margin: 0 auto; padding: 18px 24px;
     display: flex; gap: 48px; align-items: flex-start;
     background: linear-gradient(135deg, var(--primary-100) 0%, #f5f3ff 60%, var(--band) 100%);
     border: 1px solid var(--primary-200);
@@ -596,8 +597,8 @@
     letter-spacing: 0.08em; color: var(--primary); margin-bottom: 8px;
   }
   .pipeline-hero-title {
-    font-size: 20px; font-weight: 700; color: var(--text);
-    line-height: 1.3; margin-bottom: 10px; text-wrap: balance;
+    font-size: 18px; font-weight: 700; color: var(--text);
+    line-height: 1.3; margin-bottom: 8px; text-wrap: balance;
   }
   .pipeline-hero-desc {
     font-size: 13px; color: var(--text-2); line-height: 1.65; max-width: 420px;
@@ -1064,11 +1065,11 @@
 <!-- ── Ask tab ─────────────────────────────────────────────────────────── -->
 <div id="tab-ask" class="tab-panel active">
   <!-- Hero strip — always visible, explains the tab -->
-  <div class="pipeline-hero" style="padding:18px 0 14px">
+  <div class="pipeline-hero">
     <div class="pipeline-hero-inner">
       <div class="pipeline-hero-text">
         <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Grounded Inference</div>
-        <h2 class="pipeline-hero-title" style="font-size:18px;margin-bottom:8px">Any question. Live web context. Open-weight LLM.</h2>
+        <h2 class="pipeline-hero-title">Any question. Live web context. Open-weight LLM.</h2>
         <div class="pipeline-hero-steps">
           <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything current</strong> — news, funding rounds, recent launches, market moves. Things a frozen model can't know.</span></div>
           <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>LLM calls You.com as a tool</strong> — it decides what to search and when. Live results land in its context window.</span></div>
@@ -1136,24 +1137,24 @@
       </div>
     </div>
   </div>
-  <div class="chat-thread" id="chat-thread">
-    <!-- Hero strip — lives inside the thread so it scrolls away when conversation starts -->
-    <div class="pipeline-hero" id="chat-hero" style="padding:18px 0 14px;flex-shrink:0;margin-bottom:0">
-      <div class="pipeline-hero-inner">
-        <div class="pipeline-hero-text">
-          <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Research Chat</div>
-          <h2 class="pipeline-hero-title" style="font-size:18px;margin-bottom:8px">A research assistant that searches the web and remembers what you discussed</h2>
-          <div class="pipeline-hero-steps">
-            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
-            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
-            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
-          </div>
-          <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
-            Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
-          </div>
+  <!-- Hero strip — outside the thread so it doesn't push messages down -->
+  <div class="pipeline-hero" id="chat-hero">
+    <div class="pipeline-hero-inner">
+      <div class="pipeline-hero-text">
+        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Research Chat</div>
+        <h2 class="pipeline-hero-title">A research assistant that searches the web and remembers what you discussed</h2>
+        <div class="pipeline-hero-steps">
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
+          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
+        </div>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
+          Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
         </div>
       </div>
     </div>
+  </div>
+  <div class="chat-thread" id="chat-thread">
   </div>
   <div class="chat-composer">
     <div class="chat-composer-inner">
@@ -1180,7 +1181,7 @@
     <div class="pipeline-hero-inner">
       <div class="pipeline-hero-text">
         <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Sales Intelligence Pipeline</div>
-        <h2 class="pipeline-hero-title">From company name to personalized outreach, in seconds</h2>
+        <h2 class="pipeline-hero-title">From a company name to a personalized pitch, in seconds</h2>
         <div class="pipeline-hero-steps">
           <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Live web intel</strong> — You.com Web Search fetches fresh news, funding, and hiring signals for each account</span></div>
           <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Sales signals</strong> — a Parasail LLM distills findings into bullets tied to Parasail's value prop</span></div>
@@ -2505,9 +2506,7 @@ function chatNew() {
   document.getElementById('chat-stats-bar').style.display = 'none';
   const hero = document.getElementById('chat-hero');
   if (hero) hero.style.display = '';
-  // Remove all thread children except the hero
-  const thread = document.getElementById('chat-thread');
-  Array.from(thread.children).forEach(c => { if (c.id !== 'chat-hero') c.remove(); });
+  document.getElementById('chat-thread').innerHTML = '';
 }
 
 function chatStop() {
