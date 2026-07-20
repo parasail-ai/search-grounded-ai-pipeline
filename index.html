@@ -82,7 +82,7 @@
   }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
-  .tab-panel.chat-layout { display: none; }
+  .tab-panel.chat-layout { display: none; height: calc(100vh - 133px); overflow: hidden; }
   .tab-panel.chat-layout.active { display: flex; }
 
   /* ─── Input bar ──────────────────────────────────────────────────── */
@@ -418,7 +418,7 @@
   /* ─── Chat tab ───────────────────────────────────────────────────── */
   .chat-layout {
     display: flex; flex-direction: column;
-    height: calc(100vh - 105px); /* subtract header height */
+    height: 100%;
     overflow: hidden;
   }
   .chat-thread {
@@ -581,21 +581,28 @@
 
   /* ─── Pipeline hero ─────────────────────────────────────────────── */
   .pipeline-hero {
-    padding: 16px 24px;
+    padding: 12px 24px;
     flex-shrink: 0;
   }
   .pipeline-hero-inner {
-    max-width: 860px; margin: 0 auto; padding: 18px 24px;
+    max-width: 860px; margin: 0 auto; padding: 14px 18px;
     display: flex; gap: 48px; align-items: flex-start;
     background: linear-gradient(135deg, var(--primary-100) 0%, #f5f3ff 60%, var(--band) 100%);
     border: 1px solid var(--primary-200);
     border-radius: 12px;
+    cursor: pointer; user-select: none;
   }
+  .pipeline-hero-inner:hover { border-color: var(--primary); }
   .pipeline-hero-text { flex: 1; }
   .pipeline-hero-eyebrow {
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.08em; color: var(--primary); margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
   }
+  .pipeline-hero-toggle { font-size: 10px; opacity: 0.6; }
+  .pipeline-hero-body { }
+  .pipeline-hero-inner.collapsed .pipeline-hero-body { display: none; }
+  .pipeline-hero-inner.collapsed { padding-bottom: 14px; }
   .pipeline-hero-title {
     font-size: 18px; font-weight: 700; color: var(--text);
     line-height: 1.3; margin-bottom: 8px; text-wrap: balance;
@@ -1064,20 +1071,48 @@
 
 <!-- ── Ask tab ─────────────────────────────────────────────────────────── -->
 <div id="tab-ask" class="tab-panel active">
-  <!-- Hero strip — always visible, explains the tab -->
   <div class="pipeline-hero">
-    <div class="pipeline-hero-inner">
+    <div class="pipeline-hero-inner" onclick="_toggleHero(this)">
       <div class="pipeline-hero-text">
-        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Grounded Inference</div>
-        <h2 class="pipeline-hero-title">Any question. Live web context. Open-weight LLM.</h2>
-        <div class="pipeline-hero-steps">
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything current</strong> — news, funding rounds, recent launches, market moves. Things a frozen model can't know.</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>LLM calls You.com as a tool</strong> — it decides what to search and when. Live results land in its context window.</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Grounded answer</strong> — the model reasons over real-time content, not a training snapshot from 12–20 months ago.</span></div>
+        <div class="pipeline-hero-eyebrow">
+          You.com Web Search × Parasail — Grounded Inference
+          <span class="pipeline-hero-toggle" id="ask-hero-toggle">▲ collapse</span>
         </div>
-        <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
-          The question above is pre-filled with a recent event no model knows from training alone. Hit <strong>Search →</strong> with You.com Web Search on, then turn it off and ask again. The difference is the point.
+        <div class="pipeline-hero-body">
+          <h2 class="pipeline-hero-title">Any question. Live web context. Open-weight LLM.</h2>
+          <div class="pipeline-hero-steps">
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything current</strong> — news, funding rounds, recent launches, market moves. Things a frozen model can't know.</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>LLM calls You.com as a tool</strong> — it decides what to search and when. Live results land in its context window.</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Grounded answer</strong> — the model reasons over real-time content, not a training snapshot from 12–20 months ago.</span></div>
+          </div>
+          <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
+            The question above is pre-filled with a recent event no model knows from training alone. Hit <strong>Search →</strong> with You.com Web Search on, then turn it off and ask again. The difference is the point.
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats bar — below hero, above input -->
+  <div id="ask-stats-bar" style="display:none;padding:12px 24px 0">
+    <div class="stats-strip" id="stats-strip" style="margin:0;max-width:860px;margin-left:auto;margin-right:auto">
+      <div class="stat-cell">
+        <div class="stat-cell-label">Tokens</div>
+        <div class="stat-cell-value" id="stat-tokens">—</div>
+        <div class="token-breakdown" id="stat-token-breakdown" style="display:none">
+          <div class="token-chip"><span>in </span><span id="tok-input">—</span></div>
+          <div class="token-chip"><span>ctx </span><span id="tok-ctx">—</span></div>
+          <div class="token-chip"><span>out </span><span id="tok-output">—</span></div>
+        </div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Searches</div>
+        <div class="stat-cell-value" id="stat-searches">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Cost</div>
+        <div class="stat-cell-value" id="stat-cost">—</div>
+        <div class="cost-hint" id="stat-cost-hint" style="display:none">click to expand</div>
       </div>
     </div>
   </div>
@@ -1094,6 +1129,7 @@
       <input type="text" id="question" placeholder="Ask anything that needs current info…" autocomplete="off">
       <button id="ask-btn" onclick="ask()">Search →</button>
       <button id="stop-btn" onclick="stopQuery()" style="display:none">Stop ▪</button>
+      <span id="ask-latency" style="display:none;font-size:11px;color:var(--muted);white-space:nowrap;padding-left:4px"></span>
     </div>
     <div class="ask-progress" id="ask-progress"><div class="ask-progress-bar"></div></div>
   </div>
@@ -1108,8 +1144,32 @@
 
 <!-- ── Chat tab ───────────────────────────────────────────────────────── -->
 <div id="tab-chat" class="tab-panel chat-layout">
+  <!-- Hero strip — always on top -->
+  <div class="pipeline-hero" id="chat-hero">
+    <div class="pipeline-hero-inner" onclick="_toggleHero(this)">
+      <div class="pipeline-hero-text">
+        <div class="pipeline-hero-eyebrow">
+          You.com Web Search × Parasail — Research Chat
+          <span class="pipeline-hero-toggle" id="chat-hero-toggle">▲ collapse</span>
+        </div>
+        <div class="pipeline-hero-body">
+          <h2 class="pipeline-hero-title">A research assistant that searches the web and remembers what you discussed</h2>
+          <div class="pipeline-hero-steps">
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
+          </div>
+          <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
+            Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Stats bar — below hero -->
   <div class="chat-stats-bar" id="chat-stats-bar" style="display:none">
-    <div class="stats-strip" style="margin:0;border-radius:0;border-left:none;border-right:none;border-top:none">
+    <div style="padding:12px 24px 0">
+    <div class="stats-strip" style="margin:0;max-width:860px;margin-left:auto;margin-right:auto">
       <div class="stat-cell">
         <div class="stat-cell-label">Turns</div>
         <div class="stat-cell-value" id="cstat-turns">0</div>
@@ -1131,27 +1191,7 @@
         <div class="stat-cell-label">Cost</div>
         <div class="stat-cell-value" id="cstat-cost">—</div>
       </div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">Model</div>
-        <div class="stat-cell-value small" id="cstat-model">—</div>
-      </div>
     </div>
-  </div>
-  <!-- Hero strip — outside the thread so it doesn't push messages down -->
-  <div class="pipeline-hero" id="chat-hero">
-    <div class="pipeline-hero-inner">
-      <div class="pipeline-hero-text">
-        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Research Chat</div>
-        <h2 class="pipeline-hero-title">A research assistant that searches the web and remembers what you discussed</h2>
-        <div class="pipeline-hero-steps">
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Ask anything multi-step</strong> — competitive landscapes, funding history, product comparisons. Build up a picture across turns.</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Context carries forward</strong> — every prior turn is passed as history so the model builds on what it already found.</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Toggle search mid-thread</strong> — flip You.com Web Search off to see the model's frozen training knowledge, then back on to compare.</span></div>
-        </div>
-        <div style="margin-top:10px;font-size:12.5px;color:var(--text-2);line-height:1.6">
-          Try: <em>"What are the biggest open-weight LLM releases in the last 6 months?"</em>, then follow up with <em>"Which of those would be a good fit for a low-latency API product?"</em>
-        </div>
-      </div>
     </div>
   </div>
   <div class="chat-thread" id="chat-thread">
@@ -1178,14 +1218,19 @@
 
   <!-- Hero description -->
   <div class="pipeline-hero">
-    <div class="pipeline-hero-inner">
+    <div class="pipeline-hero-inner" onclick="_toggleHero(this)">
       <div class="pipeline-hero-text">
-        <div class="pipeline-hero-eyebrow">You.com Web Search × Parasail — Sales Intelligence Pipeline</div>
-        <h2 class="pipeline-hero-title">From a company name to a personalized pitch, in seconds</h2>
-        <div class="pipeline-hero-steps">
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Live web intel</strong> — You.com Web Search fetches fresh news, funding, and hiring signals for each account</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Sales signals</strong> — a Parasail LLM distills findings into bullets tied to Parasail's value prop</span></div>
-          <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Pitch email</strong> — a second LLM drafts a personalized cold outreach grounded in that context</span></div>
+        <div class="pipeline-hero-eyebrow">
+          You.com Web Search × Parasail — Sales Intelligence Pipeline
+          <span class="pipeline-hero-toggle" id="pipeline-hero-toggle">▲ collapse</span>
+        </div>
+        <div class="pipeline-hero-body">
+          <h2 class="pipeline-hero-title">From a company name to a personalized pitch, in seconds</h2>
+          <div class="pipeline-hero-steps">
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">1</span><span><strong>Live web intel</strong> — You.com Web Search fetches fresh news, funding, and hiring signals for each account</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">2</span><span><strong>Sales signals</strong> — a Parasail LLM distills findings into bullets tied to Parasail's value prop</span></div>
+            <div class="pipeline-hero-step"><span class="pipeline-hero-step-num">3</span><span><strong>Pitch email</strong> — a second LLM drafts a personalized cold outreach grounded in that context</span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1231,6 +1276,9 @@
               <option value="">Loading…</option>
             </select>
           </div>
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.5;padding-top:2px">
+            💡 Instruction-following models (e.g. GPT-OSS 20B) work best here — reasoning models may leak chain-of-thought into output.
+          </div>
         </div>
       </div>
 
@@ -1245,23 +1293,25 @@
   </div>
 
   <!-- Pipeline stats strip (hidden until pipeline runs) -->
-  <div id="pipeline-stats-strip" class="stats-strip" style="display:none;max-width:860px;margin:0 auto 24px;padding:0 24px">
+  <div id="pipeline-stats-bar" style="display:none;padding:20px 24px 0">
+  <div id="pipeline-stats-strip" class="stats-strip" style="margin:0;max-width:860px;margin-left:auto;margin-right:auto">
     <div class="stat-cell">
       <div class="stat-cell-label">Searches</div>
-      <div class="stat-cell-value" id="pstat-searches">0</div>
+      <div class="stat-cell-value" id="pstat-searches">—</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-label">Tokens In</div>
-      <div class="stat-cell-value" id="pstat-tokens-in">0</div>
+      <div class="stat-cell-label">Tokens</div>
+      <div class="stat-cell-value" id="pstat-tokens">—</div>
+      <div class="token-breakdown" id="pstat-tok-breakdown" style="display:none">
+        <div class="token-chip"><span>in </span><span id="pstat-tok-in">—</span></div>
+        <div class="token-chip"><span>out </span><span id="pstat-tok-out">—</span></div>
+      </div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-label">Tokens Out</div>
-      <div class="stat-cell-value" id="pstat-tokens-out">0</div>
+      <div class="stat-cell-label">Cost</div>
+      <div class="stat-cell-value" id="pstat-cost">—</div>
     </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Est. Cost</div>
-      <div class="stat-cell-value" id="pstat-cost">$0.000000</div>
-    </div>
+  </div>
   </div>
 
   <div id="pipeline-results" style="max-width:860px;margin:0 auto 60px;padding:0 24px"></div>
@@ -1713,7 +1763,7 @@ async function loadConfig() {
     renderConfig(cfg);
   } catch(e) {
     document.getElementById('config-body').innerHTML =
-      `<p style="color:var(--red);font-size:13px">Failed to load config: ${e.message}</p>`;
+      `<p style="color:var(--red);font-size:13px">Failed to load config: ${_esc(e.message)}</p>`;
   }
 }
 
@@ -1803,6 +1853,14 @@ async function loadModels() {
         sel.appendChild(opt);
       });
     });
+    // Pipeline steps default to gpt-oss-20b — smallest model, least verbose CoT
+    const pipelineDefault = 'gpt-oss-20b';
+    if (data.models.some(m => m.key === pipelineDefault)) {
+      ['pipeline-research-model', 'pipeline-email-model'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) sel.value = pipelineDefault;
+      });
+    }
   } catch(e) {
     document.getElementById('model-select').innerHTML = '<option>Error loading models</option>';
   }
@@ -1930,6 +1988,12 @@ function _toggleSearch(el, trackId, labelId, btnId, onLabel, offLabel) {
 }
 
 // ── Section toggle ─────────────────────────────────────────────────────────
+function _toggleHero(inner) {
+  const collapsed = inner.classList.toggle('collapsed');
+  const toggle = inner.querySelector('.pipeline-hero-toggle');
+  if (toggle) toggle.textContent = collapsed ? '▼ expand' : '▲ collapse';
+}
+
 function toggleSection(id, headerEl) {
   const block = document.getElementById(id);
   if (!block) return;
@@ -1948,44 +2012,20 @@ function handleEvent(ev) {
   const results = document.getElementById('results');
 
   if (ev.event === 'init') {
+    // Reset stats bar values and show it
+    document.getElementById('ask-stats-bar').style.display = '';
+    document.getElementById('stat-tokens').textContent = '—';
+    document.getElementById('stat-searches').textContent = '0';
+    document.getElementById('stat-cost').textContent = '—';
+    document.getElementById('stat-token-breakdown').style.display = 'none';
+    document.getElementById('stat-cost-hint').style.display = 'none';
+    const latEl = document.getElementById('ask-latency');
+    if (latEl) { latEl.textContent = ''; latEl.style.display = 'none'; }
+
     results.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-        <div class="model-pill">⚡ ${ev.display_name}</div>
+        <div class="model-pill">⚡ ${_esc(ev.display_name)}</div>
         <button class="pipe-code-btn" title="View code & prompt" onclick="openAskDrawer(this)">Code &amp; Prompt</button>
-      </div>
-
-      <!-- Stats strip -->
-      <div class="stats-strip" id="stats-strip">
-        <div class="stat-cell">
-          <div class="stat-cell-label">Tokens</div>
-          <div class="stat-cell-value loading" id="stat-tokens">—</div>
-          <div class="token-breakdown" id="stat-token-breakdown" style="display:none">
-            <div class="token-chip"><span>in </span><span id="tok-input">—</span></div>
-            <div class="token-chip"><span>ctx </span><span id="tok-ctx">—</span></div>
-            <div class="token-chip"><span>out </span><span id="tok-output">—</span></div>
-          </div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-cell-label">Searches</div>
-          <div class="stat-cell-value loading" id="stat-searches">0</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-cell-label">Cost</div>
-          <div class="stat-cell-value loading" id="stat-cost">—</div>
-          <div class="cost-hint" id="stat-cost-hint" style="display:none">click to expand</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-cell-label">Latency</div>
-          <div class="stat-cell-value loading" id="stat-latency">—</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-cell-label">TTFC</div>
-          <div class="stat-cell-value loading" id="stat-ttfc">—</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-cell-label">Model</div>
-          <div class="stat-cell-value loading small" id="stat-model">—</div>
-        </div>
       </div>
 
       <!-- Searches section -->
@@ -2159,9 +2199,6 @@ function handleEvent(ev) {
     }
 
     set('stat-searches', s.search_calls);
-    set('stat-latency', s.latency_ms ? (s.latency_ms/1000).toFixed(1) + 's' : '—');
-    set('stat-ttfc', s.connect_ms ? (s.connect_ms >= 1000 ? (s.connect_ms/1000).toFixed(1) + 's' : s.connect_ms.toLocaleString() + 'ms') : '—');
-    set('stat-model', s.model_confirmed || '—');
 
     // Cost cell — clickable
     if (costs.total !== undefined) {
@@ -2170,6 +2207,13 @@ function handleEvent(ev) {
       costEl.innerHTML = `<span class="cost-clickable" onclick="showCostPopup(this)">${costs.total_fmt || '$' + costs.total.toFixed(5)}</span>`;
       const hintEl = document.getElementById('stat-cost-hint');
       if (hintEl) hintEl.style.display = 'block';
+    }
+
+    // Latency — shown in the search bar
+    const latEl = document.getElementById('ask-latency');
+    if (latEl && s.latency_ms) {
+      latEl.textContent = s.latency_ms >= 1000 ? (s.latency_ms/1000).toFixed(1)+'s' : s.latency_ms+'ms';
+      latEl.style.display = '';
     }
 
     // Post-answer plain-English summary
@@ -2184,7 +2228,7 @@ function handleEvent(ev) {
       if (searchOn && searches > 0) parts.push(`<strong>${searches}</strong> You.com search${searches > 1 ? 'es' : ''}`);
       else if (!searchOn) parts.push('no web search · model answered from training data only');
       if (tokens) parts.push(`<strong>${tokens.toLocaleString()}</strong> tokens`);
-      if (cost) parts.push(`cost <strong>${cost}</strong>`);
+      if (cost) parts.push(`cost <strong>${_esc(cost)}</strong>`);
       if (parts.length) {
         const div = document.createElement('div');
         div.id = 'answer-summary';
@@ -2386,6 +2430,55 @@ function showChatCostPopup(anchorEl) {
   popup.style.top  = top  + 'px';
 }
 
+function showPipelineCostPopup(anchorEl) {
+  const s = _pipeStats;
+  const p = s.pricing || {};
+  const fmt = v => '$' + v.toFixed(5);
+  const searchRate = p.search_per_call || 0.005;
+  document.getElementById('costPopupContent').innerHTML = `
+    <h4>Pipeline Cost Breakdown</h4>
+    <div class="popup-section">
+      <div class="popup-section-label">LLM Inference (${s.tokensIn.toLocaleString()} in · ${s.tokensOut.toLocaleString()} out)</div>
+      <div class="popup-line">
+        <span class="desc">${s.tokensIn.toLocaleString()} input tokens × $${p.input_per_m||'?'}/M</span>
+        <span class="val">${fmt(s.tokensIn / 1_000_000 * (p.input_per_m||0))}</span>
+      </div>
+      <div class="popup-line">
+        <span class="desc">${s.tokensOut.toLocaleString()} output tokens × $${p.output_per_m||'?'}/M</span>
+        <span class="val">${fmt(s.tokensOut / 1_000_000 * (p.output_per_m||0))}</span>
+      </div>
+      <div class="popup-line" style="font-weight:600;border-top:1px dashed var(--band);margin-top:4px;padding-top:4px">
+        <span class="desc">LLM subtotal</span>
+        <span class="val">${fmt(s.llmCost)}</span>
+      </div>
+    </div>
+    <div class="popup-section">
+      <div class="popup-section-label">You.com Web Search</div>
+      <div class="popup-line">
+        <span class="desc">${s.searches} ${s.searches===1?'query':'queries'} × $${(searchRate*1000).toFixed(3)}/1k</span>
+        <span class="val">${fmt(s.searchCost)}</span>
+      </div>
+    </div>
+    <div class="popup-total">
+      <span>Pipeline Total</span>
+      <span>${fmt(s.cost)}</span>
+    </div>
+    <div class="popup-footnote">
+      $${p.input_per_m||'?'}/M input · $${p.output_per_m||'?'}/M output · $${(searchRate*1000).toFixed(3)}/1k searches
+    </div>
+  `;
+  const popup = document.getElementById('costPopup');
+  popup.classList.add('visible');
+  const rect = anchorEl.getBoundingClientRect();
+  const pw = popup.offsetWidth, ph = popup.offsetHeight;
+  let left = rect.left + rect.width / 2 - pw / 2;
+  let top  = rect.bottom + 8;
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 8;
+  popup.style.left = left + 'px';
+  popup.style.top  = top  + 'px';
+}
+
 function hideCostPopup() {
   document.getElementById('costPopup').classList.remove('visible');
 }
@@ -2492,7 +2585,6 @@ function updateChatStats(stats, costs, model, pricing) {
   document.getElementById('cstat-searches').textContent = _chatTotals.searches;
   const costEl = document.getElementById('cstat-cost');
   costEl.innerHTML = `<span class="cost-clickable" onclick="showChatCostPopup(this)">${'$' + _chatTotals.cost.toFixed(5)}</span>`;
-  document.getElementById('cstat-model').textContent   = model || '—';
   const bd = document.getElementById('cstat-tok-breakdown');
   bd.style.display = 'flex';
   document.getElementById('cstat-tok-in').textContent  = _chatTotals.input.toLocaleString();
@@ -2501,6 +2593,7 @@ function updateChatStats(stats, costs, model, pricing) {
 }
 
 function chatNew() {
+  if (_chatAbort) { _chatAbort.abort(); _chatAbort = null; }
   _chatHistory = [];
   _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0, llm: 0, search: 0, livecrawl: 0 };
   document.getElementById('chat-stats-bar').style.display = 'none';
@@ -2532,8 +2625,9 @@ async function chatSend() {
   document.getElementById('chat-send-btn').innerHTML = '<span class="spinner"></span>';
   document.getElementById('chat-stop-btn').style.display = '';
 
-  // Hide hero strip on first message
-  document.getElementById('chat-hero')?.style && (document.getElementById('chat-hero').style.display = 'none');
+  // Collapse hero on first message (keeps it visible but compact)
+  const _chatHeroInner = document.querySelector('#chat-hero .pipeline-hero-inner');
+  if (_chatHeroInner && !_chatHeroInner.classList.contains('collapsed')) _toggleHero(_chatHeroInner);
   const thread = document.getElementById('chat-thread');
   thread.querySelector('.placeholder')?.remove();
 
@@ -2728,28 +2822,45 @@ const _pBriefs = {};     // slug → completed brief text (for Step 3 drawer con
 const _pCompany = {};    // slug → company name
 
 // ── Pipeline stats accumulator ─────────────────────────────────────────────
-const _pipeStats = { searches: 0, tokensIn: 0, tokensOut: 0, cost: 0 };
+const _pipeStats = { searches: 0, tokensIn: 0, tokensOut: 0, cost: 0, llmCost: 0, searchCost: 0, pricing: null };
 
 function _resetPipeStats() {
-  _pipeStats.searches = 0; _pipeStats.tokensIn = 0; _pipeStats.tokensOut = 0; _pipeStats.cost = 0;
+  _pipeStats.searches = 0; _pipeStats.tokensIn = 0; _pipeStats.tokensOut = 0;
+  _pipeStats.cost = 0; _pipeStats.llmCost = 0; _pipeStats.searchCost = 0; _pipeStats.pricing = null;
   _updatePipeStats();
-  document.getElementById('pipeline-stats-strip').style.display = 'none';
+  document.getElementById('pipeline-stats-bar').style.display = 'none';
 }
 
 function _updatePipeStats() {
-  document.getElementById('pstat-searches').textContent = _pipeStats.searches;
-  document.getElementById('pstat-tokens-in').textContent = _pipeStats.tokensIn.toLocaleString();
-  document.getElementById('pstat-tokens-out').textContent = _pipeStats.tokensOut.toLocaleString();
-  document.getElementById('pstat-cost').textContent = '$' + _pipeStats.cost.toFixed(6);
-  document.getElementById('pipeline-stats-strip').style.display = '';
+  const totalTokens = _pipeStats.tokensIn + _pipeStats.tokensOut;
+  document.getElementById('pstat-searches').textContent = _pipeStats.searches || '—';
+  document.getElementById('pstat-tokens').textContent = totalTokens ? totalTokens.toLocaleString() : '—';
+  const breakdown = document.getElementById('pstat-tok-breakdown');
+  if (totalTokens) {
+    document.getElementById('pstat-tok-in').textContent = _pipeStats.tokensIn.toLocaleString();
+    document.getElementById('pstat-tok-out').textContent = _pipeStats.tokensOut.toLocaleString();
+    breakdown.style.display = '';
+  } else {
+    breakdown.style.display = 'none';
+  }
+  const costEl = document.getElementById('pstat-cost');
+  if (_pipeStats.cost > 0) {
+    costEl.innerHTML = `<span class="cost-clickable" onclick="showPipelineCostPopup(this)">$${_pipeStats.cost.toFixed(5)}</span>`;
+  } else {
+    costEl.textContent = '—';
+  }
+  document.getElementById('pipeline-stats-bar').style.display = '';
 }
 
 function _addPipeTokens(inputTokens, outputTokens, pricing) {
   _pipeStats.tokensIn  += inputTokens;
   _pipeStats.tokensOut += outputTokens;
   if (pricing) {
-    _pipeStats.cost += (inputTokens  / 1_000_000) * (pricing.input_per_m  || 0);
-    _pipeStats.cost += (outputTokens / 1_000_000) * (pricing.output_per_m || 0);
+    _pipeStats.pricing = pricing;
+    const llm = (inputTokens / 1_000_000) * (pricing.input_per_m || 0)
+              + (outputTokens / 1_000_000) * (pricing.output_per_m || 0);
+    _pipeStats.llmCost += llm;
+    _pipeStats.cost += llm;
   }
   _updatePipeStats();
 }
@@ -2800,7 +2911,7 @@ async function _enrichCompany(company) {
       <div class="pipe-step-header" onclick="togglePipeStep('pstep1-body-${slug}', this)" style="cursor:pointer">
         <div class="pipe-step-num">1</div>
         <div style="flex:1">
-          <div class="pipe-step-title">Live Web Intel on ${company}</div>
+          <div class="pipe-step-title">Live Web Intel on ${_esc(company)}</div>
           <div class="pipe-step-sub" id="pstep1-sub-${slug}">You.com Web Search</div>
         </div>
         <button class="pipe-code-btn" title="View code & prompt" onclick="event.stopPropagation();openCodeDrawer(1,this,'${slug}')">Code &amp; Prompt</button>
@@ -2857,13 +2968,13 @@ async function _enrichCompany(company) {
 
     // Update header — remove spinner
     const hdr = card.querySelector('.company-card-name');
-    hdr.innerHTML = `Personalized Outreach for ${company}`;
+    hdr.innerHTML = `Personalized Outreach for ${_esc(company)}`;
     // Update Step 1 sub-line with stats
     const step1Sub = card.querySelector('#pstep1-sub-' + slug);
     if (step1Sub) step1Sub.textContent = `You.com Web Search · ${hits.length} sources · ${data.latency_ms}ms`;
     _dotDone(slug, 1);
     _pipeStats.searches++;
-    _pipeStats.cost += (data.ydc_cost || 0.005);
+    const sc = (data.ydc_cost || 0.005); _pipeStats.searchCost += sc; _pipeStats.cost += sc;
     _updatePipeStats();
 
     // Add "Generate Brief" action bar
@@ -2898,7 +3009,7 @@ async function generateBrief(company, slug) {
       <div class="pipe-step-header" onclick="togglePipeStep('pstep2-body-${slug}', this)" style="cursor:pointer">
         <div class="pipe-step-num">2</div>
         <div style="flex:1">
-          <div class="pipe-step-title">${company} Signals for Parasail</div>
+          <div class="pipe-step-title">${_esc(company)} Signals for Parasail</div>
           <div class="pipe-step-sub" id="pstep2-sub-${slug}">Parasail · ${modelName}</div>
         </div>
         <span class="spinner" id="pspinner2-${slug}"></span>
@@ -2981,7 +3092,7 @@ async function generateEmail(company, slug) {
       <div class="pipe-step-header" onclick="togglePipeStep('pstep3-body-${slug}', this)" style="cursor:pointer">
         <div class="pipe-step-num">3</div>
         <div style="flex:1">
-          <div class="pipe-step-title">Parasail Pitch → ${company}</div>
+          <div class="pipe-step-title">Parasail Pitch → ${_esc(company)}</div>
           <div class="pipe-step-sub" id="pstep3-sub-${slug}">Parasail · ${modelName}</div>
         </div>
         <span class="spinner" id="pspinner3-${slug}"></span>
@@ -3138,10 +3249,10 @@ async function _rerunEnrich(company, slug) {
     // Update card header
     const card = document.getElementById(`pcard-${slug}`);
     const hdr  = card?.querySelector('.company-card-name');
-    if (hdr) hdr.innerHTML = `Personalized Outreach for ${company} <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:4px">${hits.length} sources · ${data.latency_ms}ms${livecrawl ? ' · livecrawl' : ''}</span>`;
+    if (hdr) hdr.innerHTML = `Personalized Outreach for ${_esc(company)} <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:4px">${hits.length} sources · ${data.latency_ms}ms${livecrawl ? ' · livecrawl' : ''}</span>`;
 
     _pipeStats.searches++;
-    _pipeStats.cost += (data.ydc_cost || 0.005);
+    const sc = (data.ydc_cost || 0.005); _pipeStats.searchCost += sc; _pipeStats.cost += sc;
     _updatePipeStats();
 
     // Refresh drawer response tab if it's open for this slug
@@ -3487,20 +3598,22 @@ function openCodeDrawer(stepNum, btnEl, slug) {
     const withContent = hits.filter(h => h.livecrawl_content).length;
     userMsgHtml = _ds(
       'User Message — search_tool.py · results',
-      `<span style="color:#14532d;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nSearch results:\n${context}`)}</span>`,
-      `${hits.length} hits · ${totalChars.toLocaleString()} chars · ${withContent} with livecrawl — assembled at runtime and appended after the system prompt`
+      _esc(`Company: ${_pCompany[slug] || '…'}\n\nSearch results:\n${context}`),
+      `${hits.length} hits · ${totalChars.toLocaleString()} chars · ${withContent} with livecrawl — assembled at runtime and appended after the system prompt`,
+      true
     );
   }
   if (stepNum === 3 && slug && _pBriefs && _pBriefs[slug]) {
     userMsgHtml = _ds(
       'User Message — agents/pipeline_agent.py · brief',
-      `<span style="color:#14532d;white-space:pre-wrap">${_esc(`Company: ${_pCompany[slug] || '…'}\n\nIntel Brief:\n${_pBriefs[slug]}`)}</span>`,
-      'the edited brief from step 2, appended after the system prompt'
+      _esc(`Company: ${_pCompany[slug] || '…'}\n\nIntel Brief:\n${_pBriefs[slug]}`),
+      'the edited brief from step 2, appended after the system prompt',
+      true
     );
   }
 
   pp.innerHTML =
-    _ds(info.prompt.label, `<span style="color:#3b0764;white-space:pre-wrap;word-break:break-word">${_esc(info.prompt.text)}</span>`, info.prompt.note || null) +
+    _ds(info.prompt.label, _esc(info.prompt.text), info.prompt.note || null, true) +
     userMsgHtml;
 
   // Populate code panel
@@ -3574,11 +3687,12 @@ function openAskDrawer(btnEl) {
 
   const src = _sourceData || {};
 
-  // Prompt panel — system prompt
+  // Prompt panel — system prompt (prose)
   document.getElementById('dpanel-prompt').innerHTML =
     _ds('System Prompt — search_tool.py · SYSTEM_PROMPT',
-      `<span style="color:#3b0764;white-space:pre-wrap;word-break:break-word">${_esc(src.system_prompt || '(not loaded)')}</span>`,
-      'injected at the start of every request — tells the model when to search and how to cite sources');
+      _esc(src.system_prompt || '(not loaded)'),
+      'injected at the start of every request — tells the model when to search and how to cite sources',
+      true);
 
   // Code panel — toggle routing first, then agent + search tool
   const sseAskCode    = src._sse_ask       || '(not loaded)';
@@ -3623,17 +3737,21 @@ function copyCode(btn) {
 }
 
 // Collapsible drawer code section — label + code block, starts collapsed
-function _ds(label, codeHtml, note) {
+function _ds(label, codeHtml, note, prose) {
   const noteHtml = note ? `<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:6px">&nbsp;← ${note}</span>` : '';
+  const bodyHtml = prose
+    ? `<div style="font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;background:var(--band);border:1px solid var(--border);border-radius:8px;padding:14px 16px">${codeHtml}</div>`
+    : `<div class="code-block">${codeHtml}</div>`;
+  const copyTarget = prose ? '' : `const b=this.closest('.drawer-section').querySelector('.code-block');navigator.clipboard.writeText(b?.innerText||'').then(()=>{this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1800)})`;
+  const copyBtn = prose ? '' : `<button class="ds-copy pipe-code-btn" style="margin-left:auto;font-size:10px;padding:2px 8px" onclick="${copyTarget}">Copy</button>`;
   return `<div class="drawer-section">
     <div class="drawer-section-hdr" onclick="if(event.target.closest('.ds-copy'))return;const s=this.parentElement;s.classList.toggle('open');this.querySelector('.drawer-section-arrow').textContent=s.classList.contains('open')?'▾':'▸'">
       <span class="drawer-section-arrow">▸</span>
       <span class="drawer-section-title">${label}${noteHtml}</span>
-      <button class="ds-copy pipe-code-btn" style="margin-left:auto;font-size:10px;padding:2px 8px"
-        onclick="const b=this.closest('.drawer-section').querySelector('.code-block');navigator.clipboard.writeText(b?.innerText||'').then(()=>{this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1800)})">Copy</button>
+      ${copyBtn}
     </div>
     <div class="drawer-section-body">
-      <div class="code-block">${codeHtml}</div>
+      ${bodyHtml}
     </div>
   </div>`;
 }
@@ -3659,6 +3777,7 @@ function closeCodeDrawer() {
   document.getElementById('drawer-overlay').classList.remove('open');
   document.querySelectorAll('.pipe-code-btn').forEach(b => b.classList.remove('active'));
   _activeDrawerStep = null;
+  _activeDrawerSlug = null;
 }
 
 function switchDrawerTab(name, btnEl) {

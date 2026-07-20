@@ -37,7 +37,6 @@ from models import list_models_from_api, MODELS
 from costs import calculate_costs, format_cost, YDC_SEARCH_COST_PER_CALL
 
 RETRY_DELAY_S = 5          # seconds to wait before one 429 retry
-RETRY_STATUS_CODES = {429}
 MAX_REQUEST_BODY = 512_000  # 512 KB — sufficient for any question/brief payload
 
 APP_DIR = Path(__file__).parent
@@ -315,9 +314,10 @@ class Handler(SimpleHTTPRequestHandler):
     def _sse_direct(self, model_id: str, model_cfg: dict, question: str, prior_messages: list):
         """Direct LLM call with no tools — used when You.com Search is disabled."""
         from openai import OpenAI
+        from models import PARASAIL_BASE_URL
         client = OpenAI(
             api_key=os.environ.get("PARASAIL_API_KEY", ""),
-            base_url="https://api.parasail.io/v1",
+            base_url=PARASAIL_BASE_URL,
             timeout=120.0,
         )
         messages = list(prior_messages) + [{"role": "user", "content": question}]

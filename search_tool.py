@@ -5,8 +5,7 @@ SOURCE OF TRUTH for shared constants used across the entire codebase:
   - SYSTEM_PROMPT: the canonical system prompt for all LLM paths
   - MAX_TOKENS: default max output tokens per LLM call
 
-All other modules (base_agent.py, run.py, compare.py, benchmark_runner.py)
-import these from here. Do NOT redefine them elsewhere.
+All other modules import these from here. Do NOT redefine them elsewhere.
 
 This module also:
   1. Defines the tool schema that gets passed to any LLM's function-calling API
@@ -91,8 +90,6 @@ _GPT_55_SEARCH_RULES = (
 MAX_TOKENS = 4096       # Default max output tokens per LLM call
 MAX_TOOL_ROUNDS = 15    # Max LLM ↔ tool-use round-trips before we force a final answer
 
-# Estimated baseline input tokens (system prompt + user query) for single-call native
-
 def get_system_prompt(model: str = "") -> str:
     """Return the system prompt with the current date/time appended.
 
@@ -115,9 +112,7 @@ def get_system_prompt(model: str = "") -> str:
 
 
 # ─── Tool schema (OpenAI-compatible format) ──────────────────────────────────
-# This is the function definition the LLM sees. It works as-is with OpenAI,
-# Qwen (DashScope), Kimi (Moonshot), and Llama (Together/Ollama).
-# For Claude, base_agent.py converts this to Anthropic's tool format.
+# This is the function definition the LLM sees. Works as-is with any OpenAI-compatible provider.
 
 TOOL_SCHEMA = {
     "type": "function",

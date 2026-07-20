@@ -78,7 +78,6 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from models import MODELS, model_id as resolve_model_id
 
     args = sys.argv[1:]

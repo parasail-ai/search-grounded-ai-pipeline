@@ -55,7 +55,7 @@ The LLM never sees the raw API — it just calls a tool named `web_search`. The 
 ## Quickstart
 
 ```bash
-git clone https://github.com/you/search-grounded-ai-pipeline
+git clone https://github.com/pc1438/search-grounded-ai-pipeline
 cd search-grounded-ai-pipeline
 
 pip install -r requirements.txt
@@ -65,6 +65,12 @@ cp .env.example .env
 
 python3 server.py
 # Open http://localhost:8091
+```
+
+**`EXPOSE_SOURCE`** — When set to `true` (the default), a "View Source" button in the UI lets viewers inspect the full server code and prompts in-browser. This is intentional for demos — it shows partners exactly how the pipeline works. Set it to `false` if you're running on a public URL and don't want to expose your server code.
+
+```
+EXPOSE_SOURCE=false  # disable for shared/cloud deployments
 ```
 
 ---
@@ -114,3 +120,14 @@ And update the model registry in `models.py` with your provider's model IDs and 
 **Non-streaming LLM calls in the pipeline** — Parasail's reasoning models put output in `model_extra['reasoning']`, not `delta.content`, making streaming unreliable. The pipeline collects the full response and re-emits it in 8-character chunks to preserve the streaming UX without losing output.
 
 **Open-weight models via OpenAI-compatible API** — no vendor lock-in at the model layer. The same tool-use loop works with any provider that speaks `chat.completions`. Swapping providers is a two-line change.
+
+---
+
+## Running on a shared URL
+
+If you expose this demo on a public or shared URL:
+
+- Set `EXPOSE_SOURCE=false` in `.env` — the default is `true` for local demos, but you probably don't want to expose server source code publicly.
+- Bind to localhost and put a reverse proxy (nginx, Caddy) in front with TLS.
+- Add HTTP basic auth or an allow-list at the proxy layer — the server itself has no authentication.
+- The `/api/source` endpoint is disabled when `EXPOSE_SOURCE=false`.

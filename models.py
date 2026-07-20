@@ -108,7 +108,7 @@ def list_models_from_api(api_key: str) -> list:
     # Point the standard OpenAI client at Parasail's base URL — no other changes needed
     client = OpenAI(
         api_key=api_key,
-        base_url="https://api.parasail.io/v1",
+        base_url=PARASAIL_BASE_URL,
     )
     return [m.id for m in client.models.list().data]
 

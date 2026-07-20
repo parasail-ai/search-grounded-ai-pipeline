@@ -5,6 +5,9 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
-logs/*.log
-logs/*.log.*
+logs/
 .DS_Store
+
+# Internal working docs — not for partner distribution
+CODE_REVIEW.md
+BACKLOG.md

@@ -81,6 +81,7 @@ def enrich(company: str, ydc_key: str, num_results: int = 5, livecrawl: bool = F
     )
     t0 = time.time()
     try:
+        # You.com Smart API uses "num_web_results"; the YDC v2 API uses "count" — these are different endpoints
         params = {"query": query, "num_web_results": max(1, min(num_results, 20))}
         if livecrawl:
             params["livecrawl"] = "web"
@@ -152,18 +153,23 @@ _BRIEF_SYSTEM = (
 )
 
 
-_CHUNK_SIZE = 8  # characters per synthetic SSE chunk when replaying non-streaming response
+# ── LLM streaming helper ──────────────────────────────────────────────────────
 
-def _llm_stream(system: str, user: str, model: str, label: str, start_marker: str = None):
+def _llm_stream(system: str, user: str, model: str, label: str, start_marker: str = None,
+                line_filter=None):
+    chunk_size = 8  # characters per synthetic SSE chunk when replaying non-streaming response
     """Call the LLM without streaming, then re-emit in small chunks for the browser UX.
 
     Uses stream=False because Parasail's reasoning models put output in
     model_extra['reasoning'], not delta.content — streaming chunks are unreliable.
 
-    start_marker: if set, everything before the first occurrence is stripped
-                  (handles reasoning models that narrate before producing output).
+    start_marker: if set, strip everything before the first line that STARTS with this
+                  string (line-anchored so quoted examples in CoT don't match).
+    line_filter:  if set, callable(line) -> bool; only matching lines are kept after
+                  the start_marker strip (used for brief to drop any remaining CoT prose).
     Yields: {"event": "token", "text": str} … then {"event": "done", …}
     """
+    import re
     client = _parasail_client()
     try:
         resp = client.chat.completions.create(
@@ -179,12 +185,33 @@ def _llm_stream(system: str, user: str, model: str, label: str, start_marker: st
         msg  = resp.choices[0].message
         # GPT-OSS 20B (reasoning model): content is None; output is in model_extra['reasoning']
         text = msg.content or (msg.model_extra or {}).get("reasoning", "") or ""
+        # Strip <think>…</think> blocks (Qwen3 and similar models emit CoT there)
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
         preamble = ""
-        if start_marker and start_marker in text:
-            idx = text.index(start_marker)
-            # Everything before the marker is the model's chain-of-thought narration
-            preamble = text[:idx].strip()
-            text = text[idx:]
+        if start_marker:
+            # Anchor to line-start so the marker quoted mid-sentence in CoT doesn't match
+            m = re.search(r'(?m)^' + re.escape(start_marker), text)
+            if m:
+                preamble = text[:m.start()].strip()
+                text = text[m.start():]
+            else:
+                preamble = text.strip()
+                text = ""
+        if line_filter and text:
+            # Take the LAST contiguous block of matching lines.
+            # Reasoning models output CoT first and the final answer at the tail,
+            # so quoted examples in the middle (e.g. "• on its own line") are skipped.
+            all_lines = text.splitlines()
+            kept, in_block = [], False
+            for line in reversed(all_lines):
+                if line_filter(line):
+                    kept.insert(0, line)
+                    in_block = True
+                elif in_block:
+                    break  # stop at first non-matching line after collecting bullets
+            if not kept:
+                preamble = preamble or text
+            text = "\n".join(kept)
         # Always emit thinking event so the drawer tab is available
         yield {"event": "thinking", "text": preamble}
         usage = resp.usage
@@ -192,8 +219,8 @@ def _llm_stream(system: str, user: str, model: str, label: str, start_marker: st
         output_tokens = getattr(usage, "completion_tokens", 0) if usage else 0
         logger.info("%s done input=%d output=%d", label, input_tokens, output_tokens)
         # Re-stream in small chunks so the client sees progressive output
-        for i in range(0, len(text), _CHUNK_SIZE):
-            yield {"event": "token", "text": text[i:i + _CHUNK_SIZE]}
+        for i in range(0, len(text), chunk_size):
+            yield {"event": "token", "text": text[i:i + chunk_size]}
         yield {"event": "done", "input_tokens": input_tokens, "output_tokens": output_tokens}
     except Exception as e:
         logger.error("%s failed: %s", label, e)
@@ -214,6 +241,7 @@ def brief_stream(company: str, hits: list, model: str):
         model=model,
         label=f"brief[{company}]",
         start_marker="•",
+        line_filter=lambda l: l.strip().startswith("•"),
     )
 
 
