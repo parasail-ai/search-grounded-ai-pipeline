@@ -20,11 +20,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import requests
 from openai import OpenAI
 from models import PARASAIL_BASE_URL
+from search_tool import SEARCH_ENDPOINT, SEARCH_TIMEOUT_SECONDS
 
 logger = logging.getLogger(__name__)
 
-_YDC_SEARCH_URL = "https://ydc-index.io/v1/search"
-_SEARCH_TIMEOUT    = 20
+# _LIVECRAWL_CHARS is intentionally smaller than search_tool.MAX_LIVECRAWL_CHARS (3000):
+# the brief LLM receives up to 6 hits; keeping each hit to 1500 chars prevents context bloat.
 
 
 def _parasail_client() -> OpenAI:
@@ -85,10 +86,10 @@ def enrich(company: str, ydc_key: str, num_results: int = 5, livecrawl: bool = F
             params["livecrawl"] = "web"
             params["livecrawl_formats"] = "markdown"
         resp = requests.get(
-            _YDC_SEARCH_URL,
+            SEARCH_ENDPOINT,
             headers={"X-API-Key": ydc_key},
             params=params,
-            timeout=_SEARCH_TIMEOUT,
+            timeout=SEARCH_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
         data = resp.json()
