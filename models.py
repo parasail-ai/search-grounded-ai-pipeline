@@ -4,14 +4,13 @@ models.py — Parasail model registry with pricing.
 Pricing source: parasail.io/pricing (per 1M tokens, serverless tier).
 API slugs: confirmed via docs or GET https://api.parasail.io/v1/models.
 
-Named serverless models use Parasail-specific slugs (e.g. "gpt-oss-20b").
-Open-weight models use HuggingFace IDs (e.g. "Qwen/Qwen3.6-35B-A3B").
+The registry contains the Parasail model IDs used by the demo.
 Verify current slugs by running: python3 models.py list
 
 Usage:
     from models import MODELS, get_model, default_model
 
-    cfg = get_model("qwen3.6")
+    cfg = get_model("deepseek-v4-pro")
     agent = ParasailAgent(model=cfg["model_id"])
 """
 
@@ -24,37 +23,30 @@ Usage:
 PARASAIL_BASE_URL = "https://api.parasail.io/v1"
 
 MODELS = {
-    # ── GPT-OSS (OpenAI open-weight, hosted by Parasail) ─────────────────────
-    "gpt-oss-20b": {
-        "model_id": "openai/gpt-oss-20b",      # slug from official Parasail quickstart snippet
-        "display_name": "GPT-OSS 20B",
-        "provider": "OpenAI (open-weight)",
-        "pricing": {"input": 0.04, "output": 0.20, "cache_read": 0.02},
-        "slug_confirmed": True,
-    },
-    "gpt-oss-120b": {
-        "model_id": "openai/gpt-oss-120b",     # slug from official docs (GPT-OSS 20b and 120b page)
-        "display_name": "GPT-OSS 120B",
-        "provider": "OpenAI (open-weight)",
-        "pricing": {"input": 0.10, "output": 0.75, "cache_read": 0.055},
-        "slug_confirmed": True,
-    },
-
-    # ── Qwen (Alibaba) ────────────────────────────────────────────────────────
-    "qwen3.6": {
-        "model_id": "Qwen/Qwen3.6-35B-A3B",
-        "display_name": "Qwen3.6 35B-A3B",
-        "provider": "Alibaba",
-        "pricing": {"input": 0.15, "output": 1.00, "cache_read": 0.05},
-        "slug_confirmed": True,
-    },
-
-    # ── GLM (Zhipu AI / ZAI) ─────────────────────────────────────────────────
-    "glm-5": {
-        "model_id": "zai-org/GLM-5",
-        "display_name": "GLM-5",
+    # ── GLM (Zhipu AI) ────────────────────────────────────────────────────────
+    "glm-5.2": {
+        "model_id": "zai-org/GLM-5.2",
+        "display_name": "GLM 5.2",
         "provider": "Zhipu AI",
-        "pricing": {"input": 1.00, "output": 3.20, "cache_read": 0.20},
+        "pricing": {"input": 1.40, "output": 4.40, "cache_read": 0.26},
+        "slug_confirmed": True,
+    },
+
+    # ── MiniMax ──────────────────────────────────────────────────────────────
+    "minimax-m3": {
+        "model_id": "MiniMaxAI/MiniMax-M3",
+        "display_name": "MiniMax M3",
+        "provider": "MiniMax",
+        "pricing": {"input": 0.30, "output": 1.20, "cache_read": 0.06},
+        "slug_confirmed": True,
+    },
+
+    # ── Kimi (Moonshot AI) ────────────────────────────────────────────────────
+    "kimi-k2.7-code": {
+        "model_id": "moonshotai/Kimi-K2.7-Code",
+        "display_name": "Kimi K2.7 Code",
+        "provider": "Moonshot AI",
+        "pricing": {"input": 0.75, "output": 3.50, "cache_read": 0.16},
         "slug_confirmed": True,
     },
 
@@ -69,7 +61,7 @@ MODELS = {
 }
 
 # The default model used when none is specified
-DEFAULT_MODEL = "gpt-oss-20b"
+DEFAULT_MODEL = "deepseek-v4-pro"
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────

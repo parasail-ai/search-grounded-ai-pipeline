@@ -1277,7 +1277,7 @@
             </select>
           </div>
           <div style="font-size:11.5px;color:var(--muted);line-height:1.5;padding-top:2px">
-            💡 Instruction-following models (e.g. GPT-OSS 20B) work best here — reasoning models may leak chain-of-thought into output.
+            💡 Instruction-following models work best here — reasoning models may leak chain-of-thought into output.
           </div>
         </div>
       </div>
@@ -1854,8 +1854,8 @@ async function loadModels() {
         sel.appendChild(opt);
       });
     });
-    // Pipeline steps default to gpt-oss-20b — smallest model, least verbose CoT
-    const pipelineDefault = 'gpt-oss-20b';
+    // Pipeline steps default to MiniMax M3 — the lowest-cost model
+    const pipelineDefault = 'minimax-m3';
     if (data.models.some(m => m.key === pipelineDefault)) {
       ['pipeline-research-model', 'pipeline-email-model'].forEach(id => {
         const sel = document.getElementById(id);
@@ -3522,7 +3522,7 @@ def _llm_stream(system, user, model, label):
            "input_tokens":  resp.usage.prompt_tokens,
            "output_tokens": resp.usage.completion_tokens}`,
     findings: [
-      { icon: '🧠', text: '<strong>GPT-OSS 20B is a reasoning model</strong> — <code>message.content</code> is <code>None</code>. The full output lives in <code>message.model_extra[\'reasoning\']</code>. Standard OpenAI SDK code silently returns an empty string.' },
+      { icon: '🧠', text: '<strong>Reasoning models may put output in a non-standard field</strong> — <code>message.content</code> can be <code>None</code>. The full output may live in <code>message.model_extra[\'reasoning\']</code>, so standard OpenAI SDK code can silently return an empty string.' },
       { icon: '✂️', text: '<strong><code>max_tokens=500</code> cut off mid-thought</strong> — reasoning models burn tokens on chain-of-thought before producing output. At 500 tokens the model ran out while still thinking, so no bullets ever appeared. Bumped to 1500.' },
       { icon: '📝', text: '<strong>Soft prompts weren\'t enough</strong> — "Output ONLY bullets" didn\'t suppress the thinking narration. Adding "Do not narrate your reasoning" + "First character must be \'•\'" gave the model a concrete anchor to start from.' },
     ],

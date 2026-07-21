@@ -116,7 +116,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = self._read_body()
             if body is None:
                 return
-            model_key = body.get("model", "gpt-oss-20b")
+            model_key = body.get("model", "deepseek-v4-pro")
             question = body.get("question", "").strip()
             if not question:
                 self._json({"error": "question required"}, 400)
@@ -128,7 +128,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = self._read_body()
             if body is None:
                 return
-            model_key = body.get("model", "gpt-oss-20b")
+            model_key = body.get("model", "deepseek-v4-pro")
             question = body.get("question", "").strip()
             prior_messages = body.get("prior_messages", [])
             search_enabled = body.get("search_enabled", True)

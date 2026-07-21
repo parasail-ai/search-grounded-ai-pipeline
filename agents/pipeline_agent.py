@@ -183,7 +183,7 @@ def _llm_stream(system: str, user: str, model: str, label: str, start_marker: st
             stream=False,
         )
         msg  = resp.choices[0].message
-        # GPT-OSS 20B (reasoning model): content is None; output is in model_extra['reasoning']
+        # Reasoning models may put output in model_extra['reasoning'] instead of content.
         text = msg.content or (msg.model_extra or {}).get("reasoning", "") or ""
         # Strip <think>…</think> blocks (Qwen3 and similar models emit CoT there)
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()

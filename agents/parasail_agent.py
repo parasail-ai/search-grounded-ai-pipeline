@@ -83,12 +83,12 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     if not args:
         print("Usage: python3 parasail_agent.py <model-key-or-slug> <question>")
-        print("  e.g. python3 parasail_agent.py gpt-oss-20b 'Latest AI news?'")
+        print("  e.g. python3 parasail_agent.py deepseek-v4-pro 'Latest AI news?'")
         print(f"  Keys: {list(MODELS)}")
         sys.exit(1)
 
     raw_model = args[0]
-    # Accept either a short registry key ("gpt-oss-20b") or a full slug
+    # Accept either a short registry key or a full model ID
     model_slug = resolve_model_id(raw_model) if raw_model in MODELS else raw_model
     question = " ".join(args[1:]) or input("Ask something: ")
     agent = ParasailAgent(model=model_slug)

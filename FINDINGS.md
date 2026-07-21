@@ -5,15 +5,15 @@
 
 ---
 
-## 1. GPT-OSS 20B is a Reasoning Model — Output Lives in `model_extra['reasoning']`
+## 1. Reasoning Models May Put Output in `model_extra['reasoning']`
 
-**What we found:** When streaming from `openai/gpt-oss-20b` via the Parasail API, every chunk
+**What we found:** When streaming from a reasoning model via the Parasail API, every chunk
 has `choices[0].delta.content = None`. The actual generated text is in a non-standard field
 `choices[0].delta.reasoning` (exposed via `model_extra` in the OpenAI SDK). This is true for
 both streaming and non-streaming calls — `message.content` is `None`; `message.model_extra['reasoning']`
 holds the full response.
 
-**Why it happens:** GPT-OSS 20B is deployed in a chain-of-thought / reasoning mode on Parasail.
+**Why it happens:** Some models are deployed in a chain-of-thought / reasoning mode on Parasail.
 The model shows its thinking process in the `reasoning` field before (or instead of) producing a
 `content` response. This is similar to OpenAI's o-series models but with a different field name.
 
@@ -26,7 +26,7 @@ text = msg.content or (msg.model_extra or {}).get("reasoning", "") or ""
 **What to watch for:**
 - Other open-weight models on Parasail may behave differently — always log `chunk.choices` on the
   first chunk during integration to confirm where text lands.
-- Models like Qwen3 have a `/no_think` toggle; GPT-OSS doesn't expose this via the API.
+- Model-specific reasoning controls may be available for some models but not others.
 
 ---
 
