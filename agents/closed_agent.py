@@ -19,4 +19,7 @@ class ClosedModelAgent(OpenAICompatibleAgent):
             client=client,
             model=model,
             max_tokens_param="max_completion_tokens",
+            # GPT-5.x rejects function tools on /v1/chat/completions unless
+            # reasoning_effort is 'none' (otherwise: use /v1/responses).
+            extra_body={"reasoning_effort": "none"},
         )
