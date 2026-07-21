@@ -36,7 +36,7 @@ from agents.parasail_agent import ParasailAgent
 from agents.closed_agent import ClosedModelAgent
 from agents.pipeline_agent import enrich, brief_stream, email_stream, _llm_stream
 from search_tool import SYSTEM_PROMPT, execute_search
-from models import list_models_from_api, MODELS
+from models import DEFAULT_MODEL, get_live_model_ids, list_models_from_api, MODELS
 from closed_models import CLOSED_MODELS
 from costs import calculate_costs, format_cost, YDC_SEARCH_COST_PER_CALL
 
@@ -114,6 +114,51 @@ def _is_parasail_overload(error) -> bool:
     return "429" in message or "overloaded" in message.lower()
 
 
+def _available_model_keys(live_ids=None) -> list:
+    if live_ids is None:
+        return list(MODELS)
+    live_keys = [key for key, cfg in MODELS.items() if cfg["model_id"] in live_ids]
+    return live_keys or list(MODELS)
+
+
+def _resolve_model_key(requested=None) -> str:
+    live_ids = get_live_model_ids()
+    available = _available_model_keys(live_ids)
+    if requested in available:
+        return requested
+    if DEFAULT_MODEL in available:
+        return DEFAULT_MODEL
+    return available[0]
+
+
+def _model_catalog_payload(live_ids=None) -> dict:
+    matched_keys = [
+        key for key, cfg in MODELS.items()
+        if live_ids is not None and cfg["model_id"] in live_ids
+    ]
+    fallback = live_ids is None or not matched_keys
+    available_keys = matched_keys or list(MODELS)
+    hidden = [key for key in MODELS if key not in available_keys]
+    if hidden:
+        logger.info("model catalog hiding offline curated models: %s", ", ".join(hidden))
+    if fallback:
+        reason = "lookup failed" if live_ids is None else "no curated models matched"
+        logger.warning("model catalog fallback: serving all curated models (%s)", reason)
+    return {
+        "models": [
+            {
+                "key": key,
+                "model_id": MODELS[key]["model_id"],
+                "display_name": MODELS[key]["display_name"],
+                "provider": MODELS[key]["provider"],
+                "pricing": MODELS[key]["pricing"],
+                "live": live_ids is not None and MODELS[key]["model_id"] in live_ids,
+            }
+            for key in available_keys
+        ]
+    }
+
+
 class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         logger.info(fmt, *args)
@@ -153,18 +198,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "_sse_direct":         inspect.getsource(Handler._sse_direct),
             })
         elif self.path == "/api/models":
-            self._json({
-                "models": [
-                    {
-                        "key": k,
-                        "model_id": v["model_id"],
-                        "display_name": v["display_name"],
-                        "provider": v["provider"],
-                        "pricing": v["pricing"],
-                    }
-                    for k, v in MODELS.items()
-                ]
-            })
+            self._json(_model_catalog_payload(get_live_model_ids()))
         else:
             self.send_error(404)
 
@@ -186,7 +220,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = self._read_body()
             if body is None:
                 return
-            model_key = body.get("model", "deepseek-v4-pro")
+            model_key = _resolve_model_key(body.get("model"))
             question = body.get("question", "").strip()
             if not question:
                 self._json({"error": "question required"}, 400)
@@ -198,7 +232,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = self._read_body()
             if body is None:
                 return
-            model_key = body.get("model", "deepseek-v4-pro")
+            model_key = _resolve_model_key(body.get("model"))
             question = body.get("question", "").strip()
             prior_messages = body.get("prior_messages", [])
             search_enabled = body.get("search_enabled", True)
@@ -211,7 +245,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = self._read_body()
             if body is None:
                 return
-            model_key = body.get("model", "deepseek-v4-pro")
+            model_key = _resolve_model_key(body.get("model"))
             question = body.get("question", "").strip()
             search_enabled = bool(body.get("search_enabled", True))
             closed_key = body.get("closed_model", "gpt-5.6-sol")

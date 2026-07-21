@@ -14,6 +14,11 @@ Usage:
     agent = ParasailAgent(model=cfg["model_id"])
 """
 
+import os
+import threading
+import time
+
+
 # ─── Model registry ──────────────────────────────────────────────────────────
 # Keys are short display names used in the UI / CLI.
 # model_id: the string to pass to the API as "model"
@@ -63,6 +68,10 @@ MODELS = {
 # The default model used when none is specified
 DEFAULT_MODEL = "deepseek-v4-pro"
 
+_LIVE_CACHE_TTL_S = 300
+_LIVE_CACHE_LOCK = threading.Lock()
+_LIVE_CACHE = {"fetched_at": 0.0, "model_ids": None}
+
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -103,6 +112,26 @@ def list_models_from_api(api_key: str) -> list:
         base_url=PARASAIL_BASE_URL,
     )
     return [m.id for m in client.models.list().data]
+
+
+def get_live_model_ids(ttl: int = _LIVE_CACHE_TTL_S):
+    """Return live Parasail model IDs, or None when the catalog is unavailable."""
+    now = time.monotonic()
+    with _LIVE_CACHE_LOCK:
+        if now - _LIVE_CACHE["fetched_at"] < ttl:
+            return _LIVE_CACHE["model_ids"]
+
+        api_key = os.environ.get("PARASAIL_API_KEY", "")
+        if not api_key:
+            _LIVE_CACHE.update(fetched_at=now, model_ids=None)
+            return None
+        try:
+            model_ids = set(list_models_from_api(api_key))
+        except Exception:
+            _LIVE_CACHE.update(fetched_at=now, model_ids=None)
+            return None
+        _LIVE_CACHE.update(fetched_at=now, model_ids=model_ids)
+        return model_ids
 
 
 # ─── CLI: list models + optionally probe /v1/models for live slugs ───────────
