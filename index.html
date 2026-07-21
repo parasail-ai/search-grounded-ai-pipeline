@@ -1344,83 +1344,83 @@
       <div class="about-section-body">
         <p style="font-size:13.5px;line-height:1.75;color:var(--text-2);margin-bottom:20px">
           Models like GPT-4 and Claude are proprietary; you access them only through the vendor's API.
-          Open-weight models (Llama, Qwen, DeepSeek, Gemma) have publicly released weights, so inference providers like Parasail can host and serve them through an OpenAI-compatible API, with full model choice at a fraction of the cost.
+          Open-weight models (GLM, Kimi, MiniMax, DeepSeek, Qwen) have publicly released weights, so inference providers like Parasail can host and serve them through an OpenAI-compatible API, with full model choice at a fraction of the cost.
           But they share one hard constraint: a <strong style="color:var(--text)">knowledge cutoff</strong>. Training ends on a fixed date, and everything after it is a blank.
           <strong style="color:var(--text)">You.com Web Search is what fills that gap</strong>, fetching live web results at query time so the model can reason about the world as it is today, not as it was when training stopped.
         </p>
 
-        <!-- Timeline Visual: Jan 2023 → Jul 2026 (42 months total) -->
-        <!-- Percentages: Dec '23 = 26.2%, Jun '24 = 40.5%, Oct '24 = 50%, Nov '24 = 52.4% -->
+        <!-- Timeline Visual: Jul 2024 → Jul 2026 (24 months total) -->
+        <!-- Percentages: Jan '25 = 25%, May '25 = 41.7%, Nov '25 = 66.7%, Dec '25 = 70.8% -->
         <div style="position:relative;margin:8px 0 40px">
 
-          <!-- Gap overlay: Nov 2024 → Today -->
-          <div style="position:absolute;top:0;bottom:40px;left:52.4%;right:0;background:rgba(234,88,12,0.07);border-left:2px dashed #f97316;border-radius:0 6px 6px 0;pointer-events:none;z-index:0"></div>
+          <!-- Gap overlay: Dec 2025 → Today -->
+          <div style="position:absolute;top:0;bottom:40px;left:70.8%;right:0;background:rgba(234,88,12,0.07);border-left:2px dashed #f97316;border-radius:0 6px 6px 0;pointer-events:none;z-index:0"></div>
 
-          <!-- Gap zone label (centered in the gap: midpoint ≈ 76%) -->
-          <div style="position:absolute;top:16px;left:76%;transform:translateX(-50%);text-align:center;z-index:2;pointer-events:none">
+          <!-- Gap zone label (centered in the gap: midpoint ≈ 85%) -->
+          <div style="position:absolute;top:16px;left:85%;transform:translateX(-50%);text-align:center;z-index:2;pointer-events:none">
             <div style="font-size:10.5px;font-weight:700;color:#ea580c;letter-spacing:0.05em;white-space:nowrap">KNOWLEDGE GAP</div>
-            <div style="font-size:10px;color:#ea580c;opacity:0.65;margin-top:2px">~20 months</div>
+            <div style="font-size:10px;color:#ea580c;opacity:0.65;margin-top:2px">~7 months</div>
           </div>
 
           <!-- Today marker (right edge) -->
           <div style="position:absolute;top:0;bottom:40px;right:0;width:2px;background:#ef4444;z-index:2"></div>
 
           <!-- Model rows -->
-          <!-- Llama 3.1 — Meta — cutoff Dec 2023 → 26.2% -->
+          <!-- Kimi K2.7 Code — Moonshot — cutoff Jan 2025 → 25% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Llama 3.1</div>
-              <div style="font-size:10.5px;color:var(--muted)">Meta · Dec 2023</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Kimi K2.7 Code</div>
+              <div style="font-size:10.5px;color:var(--muted)">Moonshot · Jan 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:26.2%;height:16px;border-radius:8px;background:#3b82f6;opacity:0.82"></div>
-              <div style="position:absolute;left:26.2%;top:12px;width:10px;height:10px;border-radius:50%;background:#3b82f6;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:25%;height:16px;border-radius:8px;background:#3b82f6;opacity:0.82"></div>
+              <div style="position:absolute;left:25%;top:12px;width:10px;height:10px;border-radius:50%;background:#3b82f6;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
-          <!-- Gemma 2 — Google — cutoff Jun 2024 → 40.5% -->
+          <!-- DeepSeek V4 Pro — DeepSeek — cutoff May 2025 → 41.7% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Gemma 2</div>
-              <div style="font-size:10.5px;color:var(--muted)">Google · Jun 2024</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">DeepSeek V4 Pro</div>
+              <div style="font-size:10.5px;color:var(--muted)">DeepSeek · May 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:40.5%;height:16px;border-radius:8px;background:#22c55e;opacity:0.82"></div>
-              <div style="position:absolute;left:40.5%;top:12px;width:10px;height:10px;border-radius:50%;background:#22c55e;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:41.7%;height:16px;border-radius:8px;background:#06b6d4;opacity:0.82"></div>
+              <div style="position:absolute;left:41.7%;top:12px;width:10px;height:10px;border-radius:50%;background:#06b6d4;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
-          <!-- Qwen 2.5 — Alibaba — cutoff Oct 2024 → 50% -->
+          <!-- GLM 5.2 — Zhipu AI — cutoff Nov 2025 → 66.7% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Qwen 2.5</div>
-              <div style="font-size:10.5px;color:var(--muted)">Alibaba · Oct 2024</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">GLM 5.2</div>
+              <div style="font-size:10.5px;color:var(--muted)">Zhipu AI · Nov 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:50%;height:16px;border-radius:8px;background:#f97316;opacity:0.82"></div>
-              <div style="position:absolute;left:50%;top:12px;width:10px;height:10px;border-radius:50%;background:#f97316;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:66.7%;height:16px;border-radius:8px;background:#22c55e;opacity:0.82"></div>
+              <div style="position:absolute;left:66.7%;top:12px;width:10px;height:10px;border-radius:50%;background:#22c55e;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
-          <!-- DeepSeek V3 — DeepSeek — cutoff Nov 2024 → 52.4% -->
+          <!-- MiniMax M3 — MiniMax — cutoff Dec 2025 → 70.8% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">DeepSeek V3</div>
-              <div style="font-size:10.5px;color:var(--muted)">DeepSeek · Nov 2024</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">MiniMax M3</div>
+              <div style="font-size:10.5px;color:var(--muted)">MiniMax · Dec 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:52.4%;height:16px;border-radius:8px;background:#06b6d4;opacity:0.82"></div>
-              <div style="position:absolute;left:52.4%;top:12px;width:10px;height:10px;border-radius:50%;background:#06b6d4;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:70.8%;height:16px;border-radius:8px;background:#f97316;opacity:0.82"></div>
+              <div style="position:absolute;left:70.8%;top:12px;width:10px;height:10px;border-radius:50%;background:#f97316;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
           <!-- Time axis -->
           <div style="display:flex;margin-left:142px;position:relative;z-index:1;margin-top:6px;border-top:1px solid var(--border-lt);padding-top:6px">
             <div style="flex:1;position:relative;height:24px">
-              <span style="position:absolute;left:0;font-size:10px;color:var(--muted);transform:translateX(-50%)">Jan '23</span>
-              <span style="position:absolute;left:26.2%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Dec '23</span>
-              <span style="position:absolute;left:40.5%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Jun '24</span>
-              <span style="position:absolute;left:52.4%;font-size:10px;color:#ea580c;font-weight:600;transform:translateX(-50%);white-space:nowrap">Nov '24</span>
+              <span style="position:absolute;left:0;font-size:10px;color:var(--muted);transform:translateX(-50%)">Jul '24</span>
+              <span style="position:absolute;left:25%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Jan '25</span>
+              <span style="position:absolute;left:41.7%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">May '25</span>
+              <span style="position:absolute;left:70.8%;font-size:10px;color:#ea580c;font-weight:600;transform:translateX(-50%);white-space:nowrap">Dec '25</span>
               <span style="position:absolute;right:0;font-size:10px;color:#ef4444;font-weight:700;transform:translateX(50%)">Jul '26</span>
             </div>
           </div>
@@ -1433,7 +1433,7 @@
             <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px">You.com Web Search bridges the gap</div>
             <div style="font-size:13px;color:var(--text-2);line-height:1.65">
               Instead of relying on a model's frozen training snapshot, this demo fetches live web results at query time
-              and injects them into the prompt context. The model reasons over <em>today's</em> news, not November 2024's.
+              and injects them into the prompt context. The model reasons over <em>today's</em> news, not December 2025's.
             </div>
           </div>
         </div>
