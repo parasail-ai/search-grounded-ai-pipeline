@@ -315,7 +315,8 @@ class OpenAICompatibleAgent(BaseAgent):
             yield {"event": "done", "stats": stats}
             return
 
-        stats["answer"] = response.choices[0].message.content or ""
+        message = response.choices[0].message
+        stats["answer"] = message.content or (message.model_extra or {}).get("reasoning", "") or ""
         total_in = stats["token_breakdown"]["input"]
         total_out = stats["token_breakdown"]["output"]
         stats["tokens_used"] = total_in + total_out
