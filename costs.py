@@ -78,7 +78,7 @@ if __name__ == "__main__":
             {"livecrawl": False, "count": 5},
         ],
     }
-    pricing = {"input": 0.04, "output": 0.20}  # GPT-OSS 20B
+    pricing = {"input": 0.30, "output": 1.20}  # MiniMax M3
     c = calculate_costs(sample_stats, pricing)
     print(f"LLM cost:            {format_cost(c['llm'])}")
     print(f"Search cost:         {format_cost(c['search'])}")

@@ -188,6 +188,32 @@
     white-space: nowrap; font-variant-numeric: tabular-nums;
   }
   .token-chip span { color: var(--muted); }
+  .compare-toggle { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .compare-toggle .lc-track { transform:scale(.85); transform-origin:right center; }
+  .parity-card {
+    margin-top: 24px; padding: 20px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .parity-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .parity-title { font-family:'Fraunces',serif; font-size:22px; font-weight:600; }
+  .parity-subtitle { color:var(--muted); font-size:12px; }
+  .parity-bar-row { display:grid; grid-template-columns:120px 1fr 82px; align-items:center; gap:10px; margin:9px 0; font-size:12px; }
+  .parity-bar-track { height:14px; background:var(--band); border-radius:8px; overflow:hidden; }
+  .parity-bar { height:100%; min-width:3px; border-radius:8px; }
+  .parity-bar.open { background:linear-gradient(90deg,var(--primary),var(--accent)); }
+  .parity-bar.closed { background:#f59e0b; }
+  .parity-cost { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .parity-footnote { color:var(--muted); font-size:11px; line-height:1.5; margin-top:14px; }
+  .compare-answers { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:22px; }
+  .compare-answer { border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--card); }
+  .compare-answer-head { padding:9px 12px; background:var(--band); font-size:12px; font-weight:600; }
+  .compare-answer-body { padding:14px; min-height:70px; }
+  @media (max-width:700px) {
+    .compare-answers { grid-template-columns:1fr; }
+    .parity-bar-row { grid-template-columns:95px 1fr 70px; }
+    .parity-head { display:block; }
+  }
   /* clickable cost cell */
   .cost-clickable {
     cursor: pointer;
@@ -1126,6 +1152,10 @@
         <div class="lc-track on" id="ask-search-track"><div class="lc-thumb"></div></div>
         <span id="ask-search-label" style="font-size:11.5px;font-weight:600;color:var(--primary)">You.com Web Search</span>
       </div>
+      <div class="compare-toggle" onclick="_toggleCompare(this)" title="Run the same question against a closed frontier model">
+        <div class="lc-track" id="compare-track"><div class="lc-thumb"></div></div>
+        <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Compare vs GPT-5.6 Sol</span>
+      </div>
       <input type="text" id="question" placeholder="Ask anything that needs current info…" autocomplete="off">
       <button id="ask-btn" onclick="ask()">Search →</button>
       <button id="stop-btn" onclick="stopQuery()" style="display:none">Stop ▪</button>
@@ -1277,7 +1307,7 @@
             </select>
           </div>
           <div style="font-size:11.5px;color:var(--muted);line-height:1.5;padding-top:2px">
-            💡 Instruction-following models (e.g. GPT-OSS 20B) work best here — reasoning models may leak chain-of-thought into output.
+            💡 Instruction-following models work best here — reasoning models may leak chain-of-thought into output.
           </div>
         </div>
       </div>
@@ -1344,83 +1374,84 @@
       <div class="about-section-body">
         <p style="font-size:13.5px;line-height:1.75;color:var(--text-2);margin-bottom:20px">
           Models like GPT-4 and Claude are proprietary; you access them only through the vendor's API.
-          Open-weight models (Llama, Qwen, DeepSeek, Gemma) have publicly released weights, so inference providers like Parasail can host and serve them through an OpenAI-compatible API, with full model choice at a fraction of the cost.
+          Open-weight models (GLM, Kimi, MiniMax, DeepSeek, Qwen) have publicly released weights, so inference providers like Parasail can host and serve them through an OpenAI-compatible API, with full model choice at a fraction of the cost.
           But they share one hard constraint: a <strong style="color:var(--text)">knowledge cutoff</strong>. Training ends on a fixed date, and everything after it is a blank.
           <strong style="color:var(--text)">You.com Web Search is what fills that gap</strong>, fetching live web results at query time so the model can reason about the world as it is today, not as it was when training stopped.
         </p>
 
-        <!-- Timeline Visual: Jan 2023 → Jul 2026 (42 months total) -->
-        <!-- Percentages: Dec '23 = 26.2%, Jun '24 = 40.5%, Oct '24 = 50%, Nov '24 = 52.4% -->
+        <!-- Timeline Visual: Jul 2024 → Jul 2026 (24 months total) -->
+        <!-- Percentages: Jan '25 = 25%, May '25 = 41.7%, Nov '25 = 66.7%, Dec '25 = 70.8%; avg cutoff (~Jul '25) = 51% -->
         <div style="position:relative;margin:8px 0 40px">
 
-          <!-- Gap overlay: Nov 2024 → Today -->
-          <div style="position:absolute;top:0;bottom:40px;left:52.4%;right:0;background:rgba(234,88,12,0.07);border-left:2px dashed #f97316;border-radius:0 6px 6px 0;pointer-events:none;z-index:0"></div>
+          <!-- Gap overlay: average cutoff (~Jul 2025, 51%) → Today -->
+          <div style="position:absolute;top:0;bottom:40px;left:51%;right:0;background:rgba(234,88,12,0.07);border-left:2px dashed #f97316;border-radius:0 6px 6px 0;pointer-events:none;z-index:0"></div>
 
-          <!-- Gap zone label (centered in the gap: midpoint ≈ 76%) -->
-          <div style="position:absolute;top:16px;left:76%;transform:translateX(-50%);text-align:center;z-index:2;pointer-events:none">
-            <div style="font-size:10.5px;font-weight:700;color:#ea580c;letter-spacing:0.05em;white-space:nowrap">KNOWLEDGE GAP</div>
-            <div style="font-size:10px;color:#ea580c;opacity:0.65;margin-top:2px">~20 months</div>
+          <!-- Gap zone label (centered in the gap: midpoint ≈ 75.5%) -->
+          <div style="position:absolute;top:16px;left:75.5%;transform:translateX(-50%);text-align:center;z-index:2;pointer-events:none">
+            <div style="font-size:10.5px;font-weight:700;color:#ea580c;letter-spacing:0.05em;white-space:nowrap">AVERAGE KNOWLEDGE GAP</div>
+            <div style="font-size:10px;color:#ea580c;opacity:0.65;margin-top:2px">~12 months</div>
           </div>
 
           <!-- Today marker (right edge) -->
           <div style="position:absolute;top:0;bottom:40px;right:0;width:2px;background:#ef4444;z-index:2"></div>
 
           <!-- Model rows -->
-          <!-- Llama 3.1 — Meta — cutoff Dec 2023 → 26.2% -->
+          <!-- Kimi K2.7 Code — Moonshot — cutoff Jan 2025 → 25% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Llama 3.1</div>
-              <div style="font-size:10.5px;color:var(--muted)">Meta · Dec 2023</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Kimi K2.7 Code</div>
+              <div style="font-size:10.5px;color:var(--muted)">Moonshot · Jan 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:26.2%;height:16px;border-radius:8px;background:#3b82f6;opacity:0.82"></div>
-              <div style="position:absolute;left:26.2%;top:12px;width:10px;height:10px;border-radius:50%;background:#3b82f6;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:25%;height:16px;border-radius:8px;background:#3b82f6;opacity:0.82"></div>
+              <div style="position:absolute;left:25%;top:12px;width:10px;height:10px;border-radius:50%;background:#3b82f6;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
-          <!-- Gemma 2 — Google — cutoff Jun 2024 → 40.5% -->
+          <!-- DeepSeek V4 Pro — DeepSeek — cutoff May 2025 → 41.7% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Gemma 2</div>
-              <div style="font-size:10.5px;color:var(--muted)">Google · Jun 2024</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">DeepSeek V4 Pro</div>
+              <div style="font-size:10.5px;color:var(--muted)">DeepSeek · May 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:40.5%;height:16px;border-radius:8px;background:#22c55e;opacity:0.82"></div>
-              <div style="position:absolute;left:40.5%;top:12px;width:10px;height:10px;border-radius:50%;background:#22c55e;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:41.7%;height:16px;border-radius:8px;background:#06b6d4;opacity:0.82"></div>
+              <div style="position:absolute;left:41.7%;top:12px;width:10px;height:10px;border-radius:50%;background:#06b6d4;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
-          <!-- Qwen 2.5 — Alibaba — cutoff Oct 2024 → 50% -->
+          <!-- GLM 5.2 — Zhipu AI — cutoff Nov 2025 → 66.7% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">Qwen 2.5</div>
-              <div style="font-size:10.5px;color:var(--muted)">Alibaba · Oct 2024</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">GLM 5.2</div>
+              <div style="font-size:10.5px;color:var(--muted)">Zhipu AI · Nov 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:50%;height:16px;border-radius:8px;background:#f97316;opacity:0.82"></div>
-              <div style="position:absolute;left:50%;top:12px;width:10px;height:10px;border-radius:50%;background:#f97316;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:66.7%;height:16px;border-radius:8px;background:#22c55e;opacity:0.82"></div>
+              <div style="position:absolute;left:66.7%;top:12px;width:10px;height:10px;border-radius:50%;background:#22c55e;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
-          <!-- DeepSeek V3 — DeepSeek — cutoff Nov 2024 → 52.4% -->
+          <!-- MiniMax M3 — MiniMax — cutoff Dec 2025 → 70.8% -->
           <div style="display:flex;align-items:center;margin-bottom:7px;position:relative;z-index:1">
             <div style="width:142px;flex-shrink:0;text-align:right;padding-right:14px">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">DeepSeek V3</div>
-              <div style="font-size:10.5px;color:var(--muted)">DeepSeek · Nov 2024</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2">MiniMax M3</div>
+              <div style="font-size:10.5px;color:var(--muted)">MiniMax · Dec 2025</div>
             </div>
             <div style="flex:1;height:34px;position:relative">
-              <div style="position:absolute;left:0;top:9px;width:52.4%;height:16px;border-radius:8px;background:#06b6d4;opacity:0.82"></div>
-              <div style="position:absolute;left:52.4%;top:12px;width:10px;height:10px;border-radius:50%;background:#06b6d4;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
+              <div style="position:absolute;left:0;top:9px;width:70.8%;height:16px;border-radius:8px;background:#f97316;opacity:0.82"></div>
+              <div style="position:absolute;left:70.8%;top:12px;width:10px;height:10px;border-radius:50%;background:#f97316;transform:translateX(-50%);border:2px solid var(--card);z-index:3"></div>
             </div>
           </div>
 
           <!-- Time axis -->
           <div style="display:flex;margin-left:142px;position:relative;z-index:1;margin-top:6px;border-top:1px solid var(--border-lt);padding-top:6px">
             <div style="flex:1;position:relative;height:24px">
-              <span style="position:absolute;left:0;font-size:10px;color:var(--muted);transform:translateX(-50%)">Jan '23</span>
-              <span style="position:absolute;left:26.2%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Dec '23</span>
-              <span style="position:absolute;left:40.5%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Jun '24</span>
-              <span style="position:absolute;left:52.4%;font-size:10px;color:#ea580c;font-weight:600;transform:translateX(-50%);white-space:nowrap">Nov '24</span>
+              <span style="position:absolute;left:0;font-size:10px;color:var(--muted);transform:translateX(-50%)">Jul '24</span>
+              <span style="position:absolute;left:25%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Jan '25</span>
+              <span style="position:absolute;left:41.7%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">May '25</span>
+              <span style="position:absolute;left:51%;font-size:10px;color:#ea580c;font-weight:600;transform:translateX(-50%);white-space:nowrap">avg</span>
+              <span style="position:absolute;left:70.8%;font-size:10px;color:var(--muted);transform:translateX(-50%);white-space:nowrap">Dec '25</span>
               <span style="position:absolute;right:0;font-size:10px;color:#ef4444;font-weight:700;transform:translateX(50%)">Jul '26</span>
             </div>
           </div>
@@ -1433,7 +1464,7 @@
             <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px">You.com Web Search bridges the gap</div>
             <div style="font-size:13px;color:var(--text-2);line-height:1.65">
               Instead of relying on a model's frozen training snapshot, this demo fetches live web results at query time
-              and injects them into the prompt context. The model reasons over <em>today's</em> news, not November 2024's.
+              and injects them into the prompt context. The model reasons over <em>today's</em> news, not December 2025's.
             </div>
           </div>
         </div>
@@ -1853,8 +1884,8 @@ async function loadModels() {
         sel.appendChild(opt);
       });
     });
-    // Pipeline steps default to gpt-oss-20b — smallest model, least verbose CoT
-    const pipelineDefault = 'gpt-oss-20b';
+    // Pipeline steps default to MiniMax M3 — the lowest-cost model
+    const pipelineDefault = 'minimax-m3';
     if (data.models.some(m => m.key === pipelineDefault)) {
       ['pipeline-research-model', 'pipeline-email-model'].forEach(id => {
         const sel = document.getElementById(id);
@@ -1871,6 +1902,7 @@ function ask() {
   const model = document.getElementById('model-select').value;
   const question = document.getElementById('question').value.trim();
   if (!question) return;
+  const compare = document.getElementById('compare-track')?.classList.contains('on');
 
   if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
 
@@ -1886,11 +1918,15 @@ function ask() {
 
   _abortCtrl = new AbortController();
 
-  fetch('/api/ask', {
+  fetch(compare ? '/api/compare' : '/api/ask', {
     signal: _abortCtrl.signal,
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({model, question, search_enabled: document.getElementById('ask-search-track').classList.contains('on')}),
+    body: JSON.stringify({
+      model, question,
+      search_enabled: document.getElementById('ask-search-track').classList.contains('on'),
+      ...(compare ? {closed_model: 'gpt-5.6-sol'} : {}),
+    }),
   }).then(res => {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -1905,7 +1941,10 @@ function ask() {
           buf = parts.pop();
           for (const part of parts) {
             if (!part.startsWith('data:')) continue;
-            try { handleEvent(JSON.parse(part.slice(5).trim())); } catch(e) {}
+            try {
+              const ev = JSON.parse(part.slice(5).trim());
+              compare ? handleCompareEvent(ev) : handleEvent(ev);
+            } catch(e) {}
           }
         }
       } catch(e) {
@@ -1987,6 +2026,14 @@ function _toggleSearch(el, trackId, labelId, btnId, onLabel, offLabel) {
   if (btn) btn.textContent = on ? (onLabel || 'Search →') : (offLabel || 'Ask →');
 }
 
+function _toggleCompare(el) {
+  const track = document.getElementById('compare-track');
+  if (!track) return;
+  track.classList.toggle('on');
+  const label = el.querySelector('span');
+  if (label) label.style.color = track.classList.contains('on') ? 'var(--primary)' : 'var(--muted)';
+}
+
 // ── Section toggle ─────────────────────────────────────────────────────────
 function _toggleHero(inner) {
   const collapsed = inner.classList.toggle('collapsed');
@@ -2007,6 +2054,75 @@ function toggleSection(id, headerEl) {
 function _traceEl()   { return document.getElementById('trace'); }
 function _answerEl()  { return document.getElementById('answer'); }
 function _sourcesEl() { return document.getElementById('sources'); }
+
+let _compareAnswers = {open: '', closed: ''};
+let _compareStats = {open: null, closed: null};
+
+function handleCompareEvent(ev) {
+  const results = document.getElementById('results');
+  if (ev.event === 'compare_init') {
+    _compareAnswers = {open: '', closed: ''};
+    _compareStats = {open: null, closed: null};
+    results.innerHTML = `
+      <div class="model-pill">⚡ ${_esc(ev.display_name)} <span style="font-weight:400">vs</span> ${_esc(ev.closed_display_name)}</div>
+      <div style="padding:18px 0;color:var(--muted);font-size:13px">Running both grounded models…</div>
+    `;
+  } else if (ev.event === 'answer' && ev.side) {
+    _compareAnswers[ev.side] = ev.text || '';
+  } else if (ev.event === 'done' && ev.side) {
+    _compareStats[ev.side] = ev.stats || {};
+  } else if (ev.event === 'comparison') {
+    const openCost = ev.open_cost || {};
+    const closedCost = ev.closed_cost || {};
+    const openInference = Number(ev.open_inference_cost ?? openCost.llm ?? 0);
+    const closedInference = Number(ev.closed_inference_cost ?? closedCost.llm ?? 0);
+    const maxCost = Math.max(openInference, closedInference, 0.000001);
+    const openWidth = Math.max(3, openInference / maxCost * 100);
+    const closedWidth = Math.max(3, closedInference / maxCost * 100);
+    const multiple = Number(ev.savings_multiple || 0);
+    const sourceLabel = ev.closed_source === 'projected' ? 'projected est.' : (ev.closed_source || 'live');
+    const sharedSearch = Number(openCost.search || closedCost.search || 0);
+    const fmtCost = value => `$${value.toFixed(5)}`;
+    const parityHeadline = ev.closed_source === 'projected'
+      ? `Same tokens. ${multiple.toLocaleString()}× cheaper.`
+      : `Same answer. ${multiple.toLocaleString()}× cheaper.`;
+    const intelligence = ev.intelligence == null ? '' : `
+      <div class="parity-bar-row">
+        <strong>Intelligence</strong><div class="parity-bar-track"><div class="parity-bar closed" style="width:${Math.min(100, Number(ev.intelligence))}%"></div></div><span class="parity-cost">${_esc(ev.intelligence)}</span>
+      </div>`;
+    results.innerHTML = `
+      <div class="compare-answers">
+        <div class="compare-answer">
+          <div class="compare-answer-head">Open · ${_esc(document.getElementById('model-select').selectedOptions[0]?.textContent || 'Parasail')}</div>
+          <div class="compare-answer-body answer-inner">${renderMarkdown(_compareAnswers.open || '(no answer)')}</div>
+        </div>
+        <div class="compare-answer">
+          <div class="compare-answer-head">Closed · GPT-5.6 Sol</div>
+          <div class="compare-answer-body answer-inner">${renderMarkdown(ev.closed_answer || _compareAnswers.closed || '(projected answer omitted)')}</div>
+        </div>
+      </div>
+      <div class="parity-card">
+        <div class="parity-head">
+          <div class="parity-title">${parityHeadline}</div>
+          <div class="parity-subtitle">Grounded inference parity</div>
+        </div>
+        <div class="parity-bar-row">
+          <strong>Open model</strong><div class="parity-bar-track"><div class="parity-bar open" style="width:${openWidth}%"></div></div><span class="parity-cost">${fmtCost(openInference)}</span>
+        </div>
+        <div class="parity-bar-row">
+          <strong>GPT-5.6 Sol</strong><div class="parity-bar-track"><div class="parity-bar closed" style="width:${closedWidth}%"></div></div><span class="parity-cost">${fmtCost(closedInference)}</span>
+        </div>
+        ${intelligence}
+        <div class="parity-footnote">
+          Inference cost shown above; shared You.com search cost is ${fmtCost(sharedSearch)} for both models and is excluded from the multiple. Total per query: ${fmtCost(Number(openCost.total || 0))} open / ${fmtCost(Number(closedCost.total || 0))} closed.
+          Closed benchmark source: <strong>${_esc(sourceLabel)}</strong> · pricing basis: OpenAI published GPT-5.6 Sol rates ($5.00 input / $30.00 output per 1M tokens). ${ev.closed_source === 'projected' ? 'Answer omitted; cost projected from the open-model token usage.' : ''}
+        </div>
+      </div>
+    `;
+  } else if (ev.event === 'error') {
+    results.insertAdjacentHTML('beforeend', `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)"><span style="font-size:15px">✕</span>${_esc(ev.message || 'Comparison failed')}</div>`);
+  }
+}
 
 function handleEvent(ev) {
   const results = document.getElementById('results');
@@ -3521,7 +3637,7 @@ def _llm_stream(system, user, model, label):
            "input_tokens":  resp.usage.prompt_tokens,
            "output_tokens": resp.usage.completion_tokens}`,
     findings: [
-      { icon: '🧠', text: '<strong>GPT-OSS 20B is a reasoning model</strong> — <code>message.content</code> is <code>None</code>. The full output lives in <code>message.model_extra[\'reasoning\']</code>. Standard OpenAI SDK code silently returns an empty string.' },
+      { icon: '🧠', text: '<strong>Reasoning models may put output in a non-standard field</strong> — <code>message.content</code> can be <code>None</code>. The full output may live in <code>message.model_extra[\'reasoning\']</code>, so standard OpenAI SDK code can silently return an empty string.' },
       { icon: '✂️', text: '<strong><code>max_tokens=500</code> cut off mid-thought</strong> — reasoning models burn tokens on chain-of-thought before producing output. At 500 tokens the model ran out while still thinking, so no bullets ever appeared. Bumped to 1500.' },
       { icon: '📝', text: '<strong>Soft prompts weren\'t enough</strong> — "Output ONLY bullets" didn\'t suppress the thinking narration. Adding "Do not narrate your reasoning" + "First character must be \'•\'" gave the model a concrete anchor to start from.' },
     ],
