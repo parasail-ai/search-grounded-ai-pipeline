@@ -38,6 +38,7 @@ Stats dict — canonical shape returned by ask() on all agents:
 
 import json
 import logging
+import re
 import time
 from abc import ABC, abstractmethod
 from typing import Generator
@@ -330,5 +331,13 @@ class OpenAICompatibleAgent(BaseAgent):
         )
         stats["latency_ms"] = (time.perf_counter() - t0) * 1000
 
-        yield {"event": "answer", "text": stats["answer"], "sources": stats["sources"]}
+        # Stream the final answer word-by-word so the UI updates progressively
+        # instead of dumping the whole response at once.
+        words = re.findall(r"\S+\s*", stats["answer"])
+        accumulated = ""
+        for word in words:
+            accumulated += word
+            yield {"event": "answer", "text": accumulated, "sources": stats["sources"]}
+        if not words:
+            yield {"event": "answer", "text": stats["answer"], "sources": stats["sources"]}
         yield {"event": "done", "stats": stats}
