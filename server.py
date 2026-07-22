@@ -48,12 +48,13 @@ PORT = int(os.getenv("PORT", "8091"))
 HOST = os.getenv("HOST", "0.0.0.0")
 EXPOSE_SOURCE = os.getenv("EXPOSE_SOURCE", "true").lower() == "true"
 CLOSED_CACHE_PATH = APP_DIR / "cache" / "closed_runs.json"
+_CLOSED_CACHE_VERSION = "2"    # bump when the closed agent behavior changes
 _CACHE_LOCK = threading.Lock()
 
 
 def _cache_key(question: str, model_id: str, search_enabled: bool) -> str:
     normalized = " ".join(question.split()).casefold()
-    return json.dumps([normalized, model_id, bool(search_enabled)], separators=(",", ":"))
+    return json.dumps([normalized, model_id, bool(search_enabled), _CLOSED_CACHE_VERSION], separators=(",", ":"))
 
 
 def _load_closed_cache() -> dict:
@@ -253,7 +254,8 @@ class Handler(SimpleHTTPRequestHandler):
             if not question:
                 self._json({"error": "question required"}, 400)
                 return
-            self._sse_compare(model_key, question, search_enabled, closed_key)
+            skip_cache = bool(body.get("skip_cache") or body.get("no_cache"))
+            self._sse_compare(model_key, question, search_enabled, closed_key, skip_cache=skip_cache)
         elif self.path == "/api/pipeline/enrich":
             body = self._read_body()
             if body is None:
@@ -422,7 +424,7 @@ class Handler(SimpleHTTPRequestHandler):
                     pass
                 break
 
-    def _sse_compare(self, model_key: str, question: str, search_enabled: bool, closed_key: str):
+    def _sse_compare(self, model_key: str, question: str, search_enabled: bool, closed_key: str, skip_cache: bool = False):
         open_cfg = MODELS.get(model_key)
         closed_cfg = CLOSED_MODELS.get(closed_key)
         if not open_cfg:
@@ -504,7 +506,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return
 
             cache_key = _cache_key(question, closed_cfg["model_id"], search_enabled)
-            cached = _closed_cache_get(cache_key)
+            cached = None if skip_cache else _closed_cache_get(cache_key)
             closed_source = "cached" if cached else None
             if cached:
                 closed_stats = cached["stats"]
@@ -547,10 +549,11 @@ class Handler(SimpleHTTPRequestHandler):
                             event["token_breakdown"] = closed_stats.get("token_breakdown", {})
                             event["pricing"] = _event_pricing(closed_cfg["pricing"])
                         self._send_event(event)
-                    _closed_cache_put(cache_key, {
-                        "stats": closed_stats,
-                        "costs": _event_costs(closed_stats, closed_cfg["pricing"]),
-                    })
+                    if not skip_cache:
+                        _closed_cache_put(cache_key, {
+                            "stats": closed_stats,
+                            "costs": _event_costs(closed_stats, closed_cfg["pricing"]),
+                        })
                 else:
                     if live_error:
                         logger.warning("closed model failed; using projected fallback: %s", live_error)

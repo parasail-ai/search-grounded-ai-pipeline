@@ -172,11 +172,13 @@ class OpenAICompatibleAgent(BaseAgent):
         system_prompt: str = None,
         max_tokens_param: str = "max_tokens",
         extra_body: dict | None = None,
+        force_search_first: bool = False,
     ):
         super().__init__(model, system_prompt)
         self.client = client
         self.max_tokens_param = max_tokens_param
         self.extra_body = extra_body
+        self.force_search_first = force_search_first
 
     def stream(self, question: str, max_rounds: int = None, prior_messages: list = None) -> Generator[dict, None, None]:
         stats = _empty_stats(self.model)
@@ -199,6 +201,8 @@ class OpenAICompatibleAgent(BaseAgent):
                     "tools": [TOOL_SCHEMA],
                     self.max_tokens_param: MAX_TOKENS,
                 }
+                if self.force_search_first:
+                    create_kwargs["tool_choice"] = "required" if round_num == 0 else "auto"
                 if self.extra_body:
                     create_kwargs["extra_body"] = self.extra_body
                 t_connect = time.perf_counter()
