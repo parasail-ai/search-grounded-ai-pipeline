@@ -255,7 +255,8 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json({"error": "question required"}, 400)
                 return
             skip_cache = bool(body.get("skip_cache") or body.get("no_cache"))
-            self._sse_compare(model_key, question, search_enabled, closed_key, skip_cache=skip_cache)
+            prior_messages = body.get("prior_messages") or []
+            self._sse_compare(model_key, question, search_enabled, closed_key, skip_cache=skip_cache, prior_messages=prior_messages)
         elif self.path == "/api/pipeline/enrich":
             body = self._read_body()
             if body is None:
@@ -424,7 +425,7 @@ class Handler(SimpleHTTPRequestHandler):
                     pass
                 break
 
-    def _sse_compare(self, model_key: str, question: str, search_enabled: bool, closed_key: str, skip_cache: bool = False):
+    def _sse_compare(self, model_key: str, question: str, search_enabled: bool, closed_key: str, skip_cache: bool = False, prior_messages: list = None):
         open_cfg = MODELS.get(model_key)
         closed_cfg = CLOSED_MODELS.get(closed_key)
         if not open_cfg:
@@ -455,7 +456,7 @@ class Handler(SimpleHTTPRequestHandler):
             for attempt in range(2):
                 try:
                     open_agent = ParasailAgent(model=open_cfg["model_id"])
-                    for event in open_agent.stream(question, max_rounds=None if search_enabled else 0):
+                    for event in open_agent.stream(question, max_rounds=None if search_enabled else 0, prior_messages=prior_messages):
                         if event.get("event") == "done":
                             open_stats = event.get("stats", {})
                             event["costs"] = _event_costs(open_stats, open_cfg["pricing"])
@@ -529,7 +530,7 @@ class Handler(SimpleHTTPRequestHandler):
                 live_events = []
                 live_error = None
                 try:
-                    for event in closed_agent.stream(question, max_rounds=None if search_enabled else 0):
+                    for event in closed_agent.stream(question, max_rounds=None if search_enabled else 0, prior_messages=prior_messages):
                         if event.get("event") == "done":
                             closed_stats = event.get("stats", {})
                         event["side"] = "closed"

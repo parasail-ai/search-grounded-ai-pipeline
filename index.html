@@ -1090,7 +1090,6 @@
       <button class="tab-btn" onclick="switchTab('about')">How It Works</button>
       <button class="tab-btn active" onclick="switchTab('ask')">Grounded Inference</button>
       <button class="tab-btn" onclick="switchTab('chat')">Chat</button>
-      <button class="tab-btn" onclick="switchTab('pipeline')">Outreach Pipeline</button>
     </div>
   </div>
 </div>
@@ -1236,6 +1235,10 @@
         <span id="chat-search-label" style="font-size:11.5px;font-weight:600;color:var(--primary)">You.com Web Search</span>
       </div>
       <input type="text" id="chat-input" placeholder="Message…" autocomplete="off">
+      <div class="compare-toggle" onclick="_toggleCompare(this, 'chat-compare-track')" title="Run the same question against GPT-5.6 Sol">
+        <div class="lc-track" id="chat-compare-track"><div class="lc-thumb"></div></div>
+        <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Compare vs GPT-5.6 Sol</span>
+      </div>
       <button id="chat-send-btn" onclick="chatSend()">Send →</button>
       <button id="chat-stop-btn" onclick="chatStop()" style="display:none">Stop ▪</button>
       <button id="chat-new-btn" onclick="chatNew()">New Chat</button>
@@ -1243,8 +1246,8 @@
   </div>
 </div>
 
-<!-- ── Pipeline tab ───────────────────────────────────────────────────── -->
-<div id="tab-pipeline" class="tab-panel">
+<!-- ── Pipeline tab (hidden for now) ───────────────────────────────────── -->
+<div id="tab-pipeline" class="tab-panel" style="display:none !important">
 
   <!-- Hero description -->
   <div class="pipeline-hero">
@@ -2026,8 +2029,8 @@ function _toggleSearch(el, trackId, labelId, btnId, onLabel, offLabel) {
   if (btn) btn.textContent = on ? (onLabel || 'Search →') : (offLabel || 'Ask →');
 }
 
-function _toggleCompare(el) {
-  const track = document.getElementById('compare-track');
+function _toggleCompare(el, trackId) {
+  const track = document.getElementById(trackId || 'compare-track');
   if (!track) return;
   track.classList.toggle('on');
   const label = el.querySelector('span');
@@ -2122,6 +2125,47 @@ function handleCompareEvent(ev) {
   } else if (ev.event === 'error') {
     results.insertAdjacentHTML('beforeend', `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)"><span style="font-size:15px">✕</span>${_esc(ev.message || 'Comparison failed')}</div>`);
   }
+}
+
+function _renderChatParityCard(containerId, ev, openText, closedText, openDisplayName) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const openCost = ev.open_cost || {};
+  const closedCost = ev.closed_cost || {};
+  const openInference = Number(ev.open_inference_cost ?? openCost.llm ?? 0);
+  const closedInference = Number(ev.closed_inference_cost ?? closedCost.llm ?? 0);
+  const maxCost = Math.max(openInference, closedInference, 0.000001);
+  const openWidth = Math.max(3, openInference / maxCost * 100);
+  const closedWidth = Math.max(3, closedInference / maxCost * 100);
+  const multiple = Number(ev.savings_multiple || 0);
+  const sourceLabel = ev.closed_source === 'projected' ? 'projected est.' : (ev.closed_source || 'live');
+  const sharedSearch = Number(openCost.search || closedCost.search || 0);
+  const fmtCost = value => `$${value.toFixed(5)}`;
+  const headline = ev.closed_source === 'projected'
+    ? `Same tokens. ${multiple.toLocaleString()}× cheaper.`
+    : `Same answer. ${multiple.toLocaleString()}× cheaper.`;
+  const intelligence = ev.intelligence == null ? '' : `
+    <div class="parity-bar-row">
+      <strong>Intelligence</strong><div class="parity-bar-track"><div class="parity-bar closed" style="width:${Math.min(100, Number(ev.intelligence))}%"></div></div><span class="parity-cost">${_esc(ev.intelligence)}</span>
+    </div>`;
+  el.innerHTML = `
+    <div class="parity-card">
+      <div class="parity-head">
+        <div class="parity-title">${headline}</div>
+        <div class="parity-subtitle">Grounded inference parity · this turn</div>
+      </div>
+      <div class="parity-bar-row">
+        <strong>${_esc(openDisplayName || 'Open')}</strong><div class="parity-bar-track"><div class="parity-bar open" style="width:${openWidth}%"></div></div><span class="parity-cost">${fmtCost(openInference)}</span>
+      </div>
+      <div class="parity-bar-row">
+        <strong>GPT-5.6 Sol</strong><div class="parity-bar-track"><div class="parity-bar closed" style="width:${closedWidth}%"></div></div><span class="parity-cost">${fmtCost(closedInference)}</span>
+      </div>
+      ${intelligence}
+      <div class="parity-footnote">
+        Shared You.com search cost ${fmtCost(sharedSearch)} excluded from multiple. Closed source: <strong>${_esc(sourceLabel)}</strong>. ${ev.closed_source === 'projected' ? 'Closed answer omitted; cost projected from open-model tokens.' : ''}
+      </div>
+    </div>
+  `;
 }
 
 function handleEvent(ev) {
@@ -2735,6 +2779,8 @@ async function chatSend() {
   if (!question) return;
   const model = document.getElementById('chat-model-select').value;
   if (!model) return;
+  const compare = document.getElementById('chat-compare-track')?.classList.contains('on');
+  const openDisplayName = document.getElementById('chat-model-select').selectedOptions[0]?.textContent || model;
 
   document.getElementById('chat-input').value = '';
   document.getElementById('chat-send-btn').disabled = true;
@@ -2750,27 +2796,57 @@ async function chatSend() {
   // Render turn
   const turnId = 'turn-' + Date.now();
   const turnNum = _chatTotals.turns + 1;
+  const assistantCard = compare ? `
+    <div class="chat-row-assistant">
+      <div class="chat-assistant-card streaming" id="${turnId}-card">
+        <div class="chat-assistant-header">
+          <div class="chat-assistant-header-left">
+            <span class="spinner"></span>
+            <span id="${turnId}-status">Comparing open vs GPT-5.6 Sol…</span>
+          </div>
+          <span class="chat-assistant-model" id="${turnId}-model">Open + GPT-5.6 Sol</span>
+        </div>
+        <div class="chat-assistant-body" id="${turnId}-bubble">
+          <div class="compare-answers">
+            <div class="compare-answer">
+              <div class="compare-answer-head">Open · ${_esc(openDisplayName)}</div>
+              <div class="compare-answer-body answer-inner" id="${turnId}-open"><span style="color:var(--muted);font-size:13px">…</span></div>
+            </div>
+            <div class="compare-answer">
+              <div class="compare-answer-head">Closed · GPT-5.6 Sol</div>
+              <div class="compare-answer-body answer-inner" id="${turnId}-closed"><span style="color:var(--muted);font-size:13px">…</span></div>
+            </div>
+          </div>
+          <div id="${turnId}-parity" style="margin-top:12px"></div>
+        </div>
+        <div class="chat-assistant-footer" id="${turnId}-footer" style="display:none"></div>
+        <div class="chat-searches-body" id="${turnId}-searches"></div>
+        <div class="chat-request-body" id="${turnId}-request"></div>
+      </div>
+    </div>` : `
+    <div class="chat-row-assistant">
+      <div class="chat-assistant-card streaming" id="${turnId}-card">
+        <div class="chat-assistant-header">
+          <div class="chat-assistant-header-left">
+            <span class="spinner"></span>
+            <span id="${turnId}-status">Thinking…</span>
+          </div>
+          <span class="chat-assistant-model" id="${turnId}-model">${_esc(model)}</span>
+        </div>
+        <div class="chat-assistant-body" id="${turnId}-bubble"><span style="color:var(--muted);font-size:13px">…</span></div>
+        <div class="chat-assistant-footer" id="${turnId}-footer" style="display:none"></div>
+        <div class="chat-searches-body" id="${turnId}-searches"></div>
+        <div class="chat-request-body" id="${turnId}-request"></div>
+      </div>
+    </div>`;
+
   thread.insertAdjacentHTML('beforeend', `
     <div class="chat-turn" id="${turnId}">
       <div class="chat-row-user">
         <div class="chat-row-label">You</div>
         <div class="chat-bubble-user">${question.replace(/</g,'&lt;')}</div>
       </div>
-      <div class="chat-row-assistant">
-        <div class="chat-assistant-card streaming" id="${turnId}-card">
-          <div class="chat-assistant-header">
-            <div class="chat-assistant-header-left">
-              <span class="spinner"></span>
-              <span id="${turnId}-status">Thinking…</span>
-            </div>
-            <span class="chat-assistant-model" id="${turnId}-model">${model}</span>
-          </div>
-          <div class="chat-assistant-body" id="${turnId}-bubble"><span style="color:var(--muted);font-size:13px">…</span></div>
-          <div class="chat-assistant-footer" id="${turnId}-footer" style="display:none"></div>
-          <div class="chat-searches-body" id="${turnId}-searches"></div>
-          <div class="chat-request-body" id="${turnId}-request"></div>
-        </div>
-      </div>
+      ${assistantCard}
     </div>
   `);
   thread.scrollTop = thread.scrollHeight;
@@ -2781,8 +2857,14 @@ async function chatSend() {
   const searchesBody = document.getElementById(`${turnId}-searches`);
   const requestBody = document.getElementById(`${turnId}-request`);
   const footer = document.getElementById(`${turnId}-footer`);
-  // Build and store the request payload for display — show chip immediately
-  const requestPayload = { model, question, prior_messages: _chatHistory, search_enabled: document.getElementById('chat-search-track').classList.contains('on') };
+  const openBubble = compare ? document.getElementById(`${turnId}-open`) : null;
+  const closedBubble = compare ? document.getElementById(`${turnId}-closed`) : null;
+  const parityEl = compare ? document.getElementById(`${turnId}-parity`) : null;
+
+  const searchEnabled = document.getElementById('chat-search-track').classList.contains('on');
+  const requestPayload = compare
+    ? { model, question, prior_messages: _chatHistory, search_enabled: searchEnabled, closed_model: 'gpt-5.6-sol' }
+    : { model, question, prior_messages: _chatHistory, search_enabled: searchEnabled };
   requestBody.appendChild(buildJsonTree(requestPayload));
   // Force root expanded — prior_messages array would otherwise keep root collapsed
   const rootChildren = requestBody.querySelector('.jt-children');
@@ -2795,9 +2877,14 @@ async function chatSend() {
   let answerText = '';
   let searchCount = 0;
   let doneStats = null;
+  let openAnswer = '';
+  let closedAnswer = '';
+  let openDone = null;
+  let closedDone = null;
+  let comparisonEv = null;
 
   try {
-    const res = await fetch('/api/chat', {
+    const res = await fetch(compare ? '/api/compare' : '/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(requestPayload),
@@ -2825,10 +2912,11 @@ async function chatSend() {
             ? `<span class="livecrawl-tag">livecrawl</span><span style="color:var(--muted);font-size:11px">${_esc((ev.params.url||'').replace(/^https?:\/\//,'').substring(0,55))}…</span>`
             : `"${_esc(ev.query)}"`;
           const paramStr = _esc(Object.entries(ev.params||{}).filter(([k,v])=>v&&k!=='url').map(([k,v])=>`${k}=${v}`).join(' · '));
+          const sideTag = (compare && ev.side) ? `<span style="font-size:10px;color:var(--muted);margin-left:6px">${ev.side.toUpperCase()}</span>` : '';
           searchesBody.insertAdjacentHTML('beforeend', `
             <div class="trace-item search" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
               <span class="trace-icon">🔍</span>
-              <div class="trace-content"><div class="trace-query">${label}</div>
+              <div class="trace-content"><div class="trace-query">${label}${sideTag}</div>
               <div class="trace-meta">Search ${_esc(ev.search_num)} · round ${_esc(ev.round)}${paramStr ? ' · ' + paramStr : ''}</div></div>
             </div>`);
           if (statusEl) { statusEl.textContent = `Searching… (${searchCount})`; }
@@ -2845,52 +2933,90 @@ async function chatSend() {
         }
 
         else if (ev.event === 'answer') {
-          answerText = ev.text || '';
-          if (statusEl) { statusEl.parentElement.querySelector('.spinner')?.remove(); statusEl.textContent = 'Answered'; }
-          bubble.innerHTML = renderMarkdown(answerText);
+          if (compare) {
+            if (ev.side === 'open' && openBubble) {
+              openAnswer = ev.text || '';
+              openBubble.innerHTML = renderMarkdown(openAnswer);
+              if (statusEl) { statusEl.parentElement.querySelector('.spinner')?.remove(); statusEl.textContent = 'Answering…'; }
+            } else if (ev.side === 'closed' && closedBubble) {
+              closedAnswer = ev.text || '';
+              closedBubble.innerHTML = renderMarkdown(closedAnswer);
+            }
+          } else {
+            answerText = ev.text || '';
+            if (statusEl) { statusEl.parentElement.querySelector('.spinner')?.remove(); statusEl.textContent = 'Answered'; }
+            bubble.innerHTML = renderMarkdown(answerText);
+          }
         }
 
         else if (ev.event === 'retrying') {
           if (statusEl) statusEl.textContent = ev.message;
-          bubble.innerHTML = `<div class="retrying-notice"><span class="spinner" style="border-top-color:var(--orange)"></span>${_esc(ev.message)}</div>`;
+          if (!compare) bubble.innerHTML = `<div class="retrying-notice"><span class="spinner" style="border-top-color:var(--orange)"></span>${_esc(ev.message)}</div>`;
         }
 
         else if (ev.event === 'error') {
           card.classList.remove('streaming');
           const is429 = ev.message.includes('busy') || ev.message.includes('overloaded');
-          bubble.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+          const errorHtml = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
             <span style="font-size:15px">✕</span>
             ${_esc(ev.message)}
           </div>`;
+          if (compare) {
+            if (parityEl) parityEl.innerHTML = errorHtml;
+            else bubble.innerHTML = errorHtml;
+          } else {
+            bubble.innerHTML = errorHtml;
+          }
           if (statusEl) statusEl.textContent = is429 ? 'Unavailable' : 'Error';
         }
 
         else if (ev.event === 'done') {
-          doneStats = ev.stats || {};
-          const latency = doneStats.latency_ms ? (doneStats.latency_ms/1000).toFixed(1)+'s' : '';
-          const searches = doneStats.search_calls || 0;
-          card.classList.remove('streaming');
+          if (compare) {
+            if (ev.side === 'open') { openDone = { stats: ev.stats||{}, costs: ev.costs, pricing: ev.pricing }; }
+            else if (ev.side === 'closed') { closedDone = { stats: ev.stats||{}, costs: ev.costs, pricing: ev.pricing }; }
+          } else {
+            doneStats = ev.stats || {};
+            const latency = doneStats.latency_ms ? (doneStats.latency_ms/1000).toFixed(1)+'s' : '';
+            const searches = doneStats.search_calls || 0;
+            card.classList.remove('streaming');
+            const hdr = card.querySelector('.chat-assistant-header');
+            if (hdr) hdr.querySelector('.chat-assistant-header-left').innerHTML =
+              `<span style="color:var(--muted)">${latency}</span>`;
+            if (searches) footer.insertAdjacentHTML('afterbegin',
+              `<button class="chat-footer-chip" id="${turnId}-stoggle" onclick="toggleChatSearches('${turnId}')"><span class="chip-arrow">▸</span> ${searches} search${searches>1?'es':''}</button>`);
+            else searchesBody.style.display = 'none';
+            updateChatStats(doneStats, ev.costs, doneStats.model_confirmed, ev.pricing);
+          }
+        }
 
-          // Update header: remove spinner, show latency
-          const hdr = card.querySelector('.chat-assistant-header');
-          if (hdr) hdr.querySelector('.chat-assistant-header-left').innerHTML =
-            `<span style="color:var(--muted)">${latency}</span>`;
-
-          // Footer chips — request chip already rendered at send time; add searches chip now
-          if (searches) footer.insertAdjacentHTML('afterbegin',
-            `<button class="chat-footer-chip" id="${turnId}-stoggle" onclick="toggleChatSearches('${turnId}')"><span class="chip-arrow">▸</span> ${searches} search${searches>1?'es':''}</button>`);
-          else searchesBody.style.display = 'none';
-
-          updateChatStats(doneStats, ev.costs, doneStats.model_confirmed, ev.pricing);
+        else if (compare && ev.event === 'comparison') {
+          comparisonEv = ev;
+          _renderChatParityCard(`${turnId}-parity`, ev, openAnswer, closedAnswer, openDisplayName);
         }
       }
     }
   } catch(e) {
     if (e.name !== 'AbortError') {
       card.classList.remove('streaming');
-      bubble.innerHTML = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+      const errorHtml = `<div class="retrying-notice" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
         <span style="font-size:15px">✕</span> ${e.message}
       </div>`;
+      if (compare && parityEl) parityEl.innerHTML = errorHtml;
+      else bubble.innerHTML = errorHtml;
+    }
+  }
+
+  // Finalize compare turn
+  if (compare) {
+    card.classList.remove('streaming');
+    answerText = openAnswer;
+    const searches = (openDone?.stats?.search_calls || 0) + (closedDone?.stats?.search_calls || 0);
+    if (searches) footer.insertAdjacentHTML('afterbegin',
+      `<button class="chat-footer-chip" id="${turnId}-stoggle" onclick="toggleChatSearches('${turnId}')"><span class="chip-arrow">▸</span> ${searches} search${searches>1?'es':''}</button>`);
+    else searchesBody.style.display = 'none';
+    if (statusEl) { statusEl.parentElement.querySelector('.spinner')?.remove(); statusEl.textContent = 'Compared'; }
+    if (openDone) {
+      updateChatStats(openDone.stats, openDone.costs, openDone.stats.model_confirmed, openDone.pricing);
     }
   }
 
