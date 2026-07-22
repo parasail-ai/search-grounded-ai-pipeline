@@ -1,0 +1,23 @@
+app = 'you-parasail-demo'
+primary_region = 'iad'
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = '8091'
+  HOST = '0.0.0.0'
+  EXPOSE_SOURCE = 'false'
+  ALLOW_LIVE_CLOSED = 'false'
+
+[http_service]
+  internal_port = 8091
+  force_https = true
+  auto_stop_machines = false
+
+[checks]
+  [checks.alive]
+    type = "tcp"
+    port = 8091
+    interval = "30s"
+    timeout = "5s"

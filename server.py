@@ -44,7 +44,8 @@ RETRY_DELAY_S = 5          # seconds to wait before one 429 retry
 MAX_REQUEST_BODY = 512_000  # 512 KB — sufficient for any question/brief payload
 
 APP_DIR = Path(__file__).parent
-PORT = 8091
+PORT = int(os.getenv("PORT", "8091"))
+HOST = os.getenv("HOST", "0.0.0.0")
 EXPOSE_SOURCE = os.getenv("EXPOSE_SOURCE", "true").lower() == "true"
 CLOSED_CACHE_PATH = APP_DIR / "cache" / "closed_runs.json"
 _CACHE_LOCK = threading.Lock()
@@ -717,10 +718,11 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument("--host", type=str, default=HOST)
     args = parser.parse_args()
 
-    server = ThreadedHTTPServer(("127.0.0.1", args.port), Handler)
-    logger.info("Parasail playground → http://localhost:%d", args.port)
+    server = ThreadedHTTPServer((args.host, args.port), Handler)
+    logger.info("Parasail playground → http://%s:%d", args.host, args.port)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
