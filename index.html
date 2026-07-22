@@ -451,9 +451,12 @@
     flex: 1; overflow-y: auto;
     max-width: 860px; width: 100%; margin: 0 auto;
     padding: 24px 24px 16px;
-    display: flex; flex-direction: column; justify-content: flex-end; gap: 20px;
+    display: flex; flex-direction: column; gap: 20px;
     box-sizing: border-box;
   }
+  /* Keeps short threads bottom-aligned without clipping the top of tall,
+     overflowing threads (justify-content:flex-end breaks scroll-up). */
+  .chat-thread > *:first-child { margin-top: auto; }
   .chat-composer {
     border-top: 1px solid var(--border); background: var(--card);
     padding: 14px 0;

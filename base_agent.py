@@ -331,13 +331,17 @@ class OpenAICompatibleAgent(BaseAgent):
         )
         stats["latency_ms"] = (time.perf_counter() - t0) * 1000
 
-        # Stream the final answer word-by-word so the UI updates progressively
-        # instead of dumping the whole response at once.
-        words = re.findall(r"\S+\s*", stats["answer"])
-        accumulated = ""
-        for word in words:
-            accumulated += word
-            yield {"event": "answer", "text": accumulated, "sources": stats["sources"]}
-        if not words:
-            yield {"event": "answer", "text": stats["answer"], "sources": stats["sources"]}
+        # Reveal the final answer progressively so the UI updates as it fills in,
+        # but cap the number of updates so the client re-renders a bounded number
+        # of times regardless of answer length (avoids O(n^2) markdown re-rendering).
+        answer_text = stats["answer"]
+        words = re.findall(r"\S+\s*", answer_text)
+        if len(words) > 1:
+            max_updates = 24
+            step = max(1, (len(words) + max_updates - 1) // max_updates)
+            chars = 0
+            for i in range(0, len(words), step):
+                chars += sum(len(w) for w in words[i:i + step])
+                yield {"event": "answer", "text": answer_text[:chars], "sources": stats["sources"]}
+        yield {"event": "answer", "text": answer_text, "sources": stats["sources"]}
         yield {"event": "done", "stats": stats}
