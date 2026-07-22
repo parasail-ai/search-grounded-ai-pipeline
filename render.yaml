@@ -10,5 +10,5 @@ services:
       - key: EXPOSE_SOURCE
         value: "false"
       - key: ALLOW_LIVE_CLOSED
-        value: "false"
+        value: "true"
     healthCheckPath: /
