@@ -3,6 +3,8 @@ services:
     name: you-parasail-demo
     runtime: docker
     dockerfilePath: ./Dockerfile
+    branch: main
+    autoDeployTrigger: commit
     plan: free
     envVars:
       - key: HOST
