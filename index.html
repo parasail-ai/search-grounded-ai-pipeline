@@ -1891,12 +1891,12 @@ async function loadModels() {
         sel.appendChild(opt);
       });
     });
-    // Pipeline steps default to MiniMax M3 — the lowest-cost model
-    const pipelineDefault = 'minimax-m3';
-    if (data.models.some(m => m.key === pipelineDefault)) {
-      ['pipeline-research-model', 'pipeline-email-model'].forEach(id => {
+    // Default every selector to MiniMax M3 — fast and cheap — when it's live.
+    const defaultModel = 'minimax-m3';
+    if (data.models.some(m => m.key === defaultModel)) {
+      ['model-select', 'chat-model-select', 'pipeline-research-model', 'pipeline-email-model'].forEach(id => {
         const sel = document.getElementById(id);
-        if (sel) sel.value = pipelineDefault;
+        if (sel) sel.value = defaultModel;
       });
     }
   } catch(e) {
