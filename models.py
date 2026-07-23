@@ -55,7 +55,7 @@ MODELS = {
         "slug_confirmed": True,
     },
     "kimi-k2.6": {
-        "model_id": "moonshotai/Kimi-K2.6",
+        "model_id": "parasail-kimi-26-hackathon",
         "display_name": "Kimi K2.6",
         "provider": "Moonshot AI",
         "pricing": {"input": 0.75, "output": 3.50, "cache_read": 0.16},

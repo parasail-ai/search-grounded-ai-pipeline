@@ -193,6 +193,7 @@ class OpenAICompatibleAgent(BaseAgent):
         search_num = 0
         _max_rounds = max_rounds if max_rounds is not None else MAX_TOOL_ROUNDS
         response = None
+        budget_prompt_added = False
 
         for round_num in range(_max_rounds):
             searches_left = None if max_searches is None else max(0, max_searches - stats["search_calls"])
@@ -200,14 +201,25 @@ class OpenAICompatibleAgent(BaseAgent):
                 create_kwargs = {
                     "model": self.model,
                     "messages": messages,
-                    "tools": [TOOL_SCHEMA],
                     self.max_tokens_param: MAX_TOKENS,
                 }
-                if self.force_search_first and round_num == 0:
-                    create_kwargs["tool_choice"] = "required"
-                elif searches_left == 0:
-                    # Search budget exhausted — force the model to answer from what it has.
-                    create_kwargs["tool_choice"] = "none"
+                if searches_left == 0:
+                    # Search budget exhausted — drop tools and explicitly instruct the
+                    # model to answer from what it has. (Just omitting tools or setting
+                    # tool_choice="none" makes some models emit raw tool-call tokens
+                    # into the answer instead of synthesizing.)
+                    if not budget_prompt_added:
+                        messages.append({
+                            "role": "user",
+                            "content": "You have reached your web search limit. Do NOT "
+                                       "search again. Using only the information already "
+                                       "gathered above, write the final answer now.",
+                        })
+                        budget_prompt_added = True
+                else:
+                    create_kwargs["tools"] = [TOOL_SCHEMA]
+                    if self.force_search_first and round_num == 0:
+                        create_kwargs["tool_choice"] = "required"
                 if self.extra_body:
                     create_kwargs["extra_body"] = self.extra_body
                 t_connect = time.perf_counter()
