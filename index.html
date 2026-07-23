@@ -190,6 +190,16 @@
   .token-chip span { color: var(--muted); }
   .compare-toggle { display:flex; align-items:center; gap:6px; white-space:nowrap; }
   .compare-toggle .lc-track { transform:scale(.85); transform-origin:right center; }
+  .searches-cap {
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+    font-size:11.5px; font-weight:600; color:var(--muted);
+  }
+  .searches-cap input {
+    width:44px; padding:5px 6px; text-align:center;
+    border:1px solid var(--border); border-radius:8px;
+    background:var(--card); color:var(--text);
+    font-size:12.5px; font-variant-numeric:tabular-nums;
+  }
   .parity-card {
     margin-top: 24px; padding: 20px; background: var(--card);
     border: 1px solid var(--border); border-radius: 12px;
@@ -1158,6 +1168,10 @@
         <div class="lc-track" id="compare-track"><div class="lc-thumb"></div></div>
         <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Compare vs GPT-5.6 Sol</span>
       </div>
+      <label class="searches-cap" title="Max web searches the model may run per query">
+        <span>Searches</span>
+        <input type="number" id="ask-max-searches" min="1" max="10" step="1" value="1">
+      </label>
       <input type="text" id="question" placeholder="Ask anything that needs current info…" autocomplete="off">
       <button id="ask-btn" onclick="ask()">Search →</button>
       <button id="stop-btn" onclick="stopQuery()" style="display:none">Stop ▪</button>
@@ -1238,6 +1252,10 @@
         <div class="lc-track on" id="chat-search-track"><div class="lc-thumb"></div></div>
         <span id="chat-search-label" style="font-size:11.5px;font-weight:600;color:var(--primary)">You.com Web Search</span>
       </div>
+      <label class="searches-cap" title="Max web searches the model may run per turn">
+        <span>Searches</span>
+        <input type="number" id="chat-max-searches" min="1" max="10" step="1" value="1">
+      </label>
       <input type="text" id="chat-input" placeholder="Message…" autocomplete="off">
       <div class="compare-toggle" onclick="_toggleCompare(this, 'chat-compare-track')" title="Run the same question against GPT-5.6 Sol">
         <div class="lc-track" id="chat-compare-track"><div class="lc-thumb"></div></div>
@@ -1904,6 +1922,14 @@ async function loadModels() {
   }
 }
 
+// Read a "max searches per query" input, clamped to 1–10. Defaults to 1.
+function _readMaxSearches(id) {
+  const el = document.getElementById(id);
+  const n = parseInt(el && el.value, 10);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, 10);
+}
+
 // ── Ask ────────────────────────────────────────────────────────────────────
 function ask() {
   const model = document.getElementById('model-select').value;
@@ -1932,6 +1958,7 @@ function ask() {
     body: JSON.stringify({
       model, question,
       search_enabled: document.getElementById('ask-search-track').classList.contains('on'),
+      max_searches: _readMaxSearches('ask-max-searches'),
       ...(compare ? {closed_model: 'gpt-5.6-sol'} : {}),
     }),
   }).then(res => {
@@ -2866,9 +2893,10 @@ async function chatSend() {
   const parityEl = compare ? document.getElementById(`${turnId}-parity`) : null;
 
   const searchEnabled = document.getElementById('chat-search-track').classList.contains('on');
+  const maxSearches = _readMaxSearches('chat-max-searches');
   const requestPayload = compare
-    ? { model, question, prior_messages: _chatHistory, search_enabled: searchEnabled, closed_model: 'gpt-5.6-sol' }
-    : { model, question, prior_messages: _chatHistory, search_enabled: searchEnabled };
+    ? { model, question, prior_messages: _chatHistory, search_enabled: searchEnabled, max_searches: maxSearches, closed_model: 'gpt-5.6-sol' }
+    : { model, question, prior_messages: _chatHistory, search_enabled: searchEnabled, max_searches: maxSearches };
   requestBody.appendChild(buildJsonTree(requestPayload));
   // Force root expanded — prior_messages array would otherwise keep root collapsed
   const rootChildren = requestBody.querySelector('.jt-children');
