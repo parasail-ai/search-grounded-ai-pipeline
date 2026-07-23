@@ -2178,7 +2178,7 @@ function handleCompareEvent(ev) {
     const fmtCost = value => `$${value.toFixed(5)}`;
     const parityHeadline = ev.closed_source === 'projected'
       ? `Same tokens. ${multiple.toLocaleString()}× cheaper.`
-      : `Same answer. ${multiple.toLocaleString()}× cheaper.`;
+      : `Open model is ${multiple.toLocaleString()}× cheaper than closed.`;
     const intelligence = ev.intelligence == null ? '' : `
       <div class="parity-bar-row">
         <strong>Intelligence</strong><div class="parity-bar-track"><div class="parity-bar closed" style="width:${Math.min(100, Number(ev.intelligence))}%"></div></div><span class="parity-cost">${_esc(ev.intelligence)}</span>
@@ -2233,7 +2233,7 @@ function _renderChatParityCard(containerId, ev, openText, closedText, openDispla
   const fmtCost = value => `$${value.toFixed(5)}`;
   const headline = ev.closed_source === 'projected'
     ? `Same tokens. ${multiple.toLocaleString()}× cheaper.`
-    : `Same answer. ${multiple.toLocaleString()}× cheaper.`;
+    : `Open model is ${multiple.toLocaleString()}× cheaper than closed.`;
   const intelligence = ev.intelligence == null ? '' : `
     <div class="parity-bar-row">
       <strong>Intelligence</strong><div class="parity-bar-track"><div class="parity-bar closed" style="width:${Math.min(100, Number(ev.intelligence))}%"></div></div><span class="parity-cost">${_esc(ev.intelligence)}</span>
