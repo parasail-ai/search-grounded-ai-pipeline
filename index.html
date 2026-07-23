@@ -2097,12 +2097,25 @@ function handleCompareEvent(ev) {
   if (ev.event === 'compare_init') {
     _compareAnswers = {open: '', closed: ''};
     _compareStats = {open: null, closed: null};
+    const openName = document.getElementById('model-select').selectedOptions[0]?.textContent || ev.display_name || 'Parasail';
     results.innerHTML = `
       <div class="model-pill">⚡ ${_esc(ev.display_name)} <span style="font-weight:400">vs</span> ${_esc(ev.closed_display_name)}</div>
-      <div style="padding:18px 0;color:var(--muted);font-size:13px">Running both grounded models…</div>
+      <div class="compare-answers">
+        <div class="compare-answer">
+          <div class="compare-answer-head">Open · ${_esc(openName)}</div>
+          <div class="compare-answer-body answer-inner" id="cmp-open-body"><span class="spinner"></span> <span style="color:var(--muted);font-size:13px">Searching &amp; generating…</span></div>
+        </div>
+        <div class="compare-answer">
+          <div class="compare-answer-head">Closed · ${_esc(ev.closed_display_name || 'GPT-5.6 Sol')}</div>
+          <div class="compare-answer-body answer-inner" id="cmp-closed-body"><span class="spinner"></span> <span style="color:var(--muted);font-size:13px">Searching &amp; generating…</span></div>
+        </div>
+      </div>
+      <div id="cmp-parity"></div>
     `;
   } else if (ev.event === 'answer' && ev.side) {
     _compareAnswers[ev.side] = ev.text || '';
+    const bodyEl = document.getElementById(ev.side === 'closed' ? 'cmp-closed-body' : 'cmp-open-body');
+    if (bodyEl && ev.text) bodyEl.innerHTML = renderMarkdown(ev.text);
   } else if (ev.event === 'done' && ev.side) {
     _compareStats[ev.side] = ev.stats || {};
   } else if (ev.event === 'comparison') {
