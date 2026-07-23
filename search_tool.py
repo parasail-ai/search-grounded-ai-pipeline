@@ -88,6 +88,8 @@ _GPT_55_SEARCH_RULES = (
 )
 
 MAX_TOKENS = 4096       # Default max output tokens per LLM call
+ANSWER_MAX_TOKENS = 2048  # Cap for the final answer round — keeps latency bounded.
+                          # Concise models (e.g. MiniMax M3) finish well under this.
 MAX_TOOL_ROUNDS = 15    # Max LLM ↔ tool-use round-trips before we force a final answer
 
 def get_system_prompt(model: str = "") -> str:

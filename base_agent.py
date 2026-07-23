@@ -38,7 +38,6 @@ Stats dict — canonical shape returned by ask() on all agents:
 
 import json
 import logging
-import re
 import time
 from abc import ABC, abstractmethod
 from typing import Generator
@@ -47,6 +46,7 @@ from search_tool import (
     INTEGRATION_INTERFACE,
     get_system_prompt,
     MAX_TOKENS,
+    ANSWER_MAX_TOKENS,
     MAX_TOOL_ROUNDS,
     TOOL_SCHEMA,
     build_tool_log_entry,
@@ -192,8 +192,91 @@ class OpenAICompatibleAgent(BaseAgent):
         baseline_input = 0
         search_num = 0
         _max_rounds = max_rounds if max_rounds is not None else MAX_TOOL_ROUNDS
-        response = None
         budget_prompt_added = False
+        cumulative_answer = ""
+        answer_emit_chars = 0
+        final_aggregate = None
+
+        def consume_stream(response_stream, round_num):
+            nonlocal cumulative_answer, answer_emit_chars
+            content_parts = []
+            reasoning_parts = []
+            tool_calls = {}
+            finish_reason = None
+            model = None
+            usage = None
+            saw_choice = False
+            first_chunk = True
+
+            for chunk in response_stream:
+                if first_chunk:
+                    first_chunk = False
+                    if round_num == 0:
+                        stats["connect_ms"] = round((time.perf_counter() - t_connect) * 1000)
+                if model is None:
+                    model = getattr(chunk, "model", None)
+                chunk_usage = getattr(chunk, "usage", None)
+                if chunk_usage is not None:
+                    usage = chunk_usage
+                if not getattr(chunk, "choices", None):
+                    continue
+
+                saw_choice = True
+                choice = chunk.choices[0]
+                if choice.finish_reason is not None:
+                    finish_reason = choice.finish_reason
+                delta = choice.delta
+                content = getattr(delta, "content", None) or ""
+                reasoning = (
+                    getattr(delta, "reasoning_content", None)
+                    or getattr(delta, "reasoning", None)
+                    or (getattr(delta, "model_extra", None) or {}).get("reasoning", "")
+                    or ""
+                )
+                if content:
+                    content_parts.append(content)
+                if reasoning:
+                    reasoning_parts.append(reasoning)
+
+                streamed_piece = content or reasoning
+                if streamed_piece:
+                    cumulative_answer += streamed_piece
+                    if len(cumulative_answer) - answer_emit_chars >= 60:
+                        answer_emit_chars = len(cumulative_answer)
+                        yield {
+                            "event": "answer",
+                            "text": cumulative_answer,
+                            "sources": stats["sources"],
+                        }
+
+                for fragment in (getattr(delta, "tool_calls", None) or []):
+                    index = getattr(fragment, "index", 0)
+                    call = tool_calls.setdefault(index, {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    })
+                    fragment_id = getattr(fragment, "id", None)
+                    if fragment_id:
+                        call["id"] = fragment_id
+                    function = getattr(fragment, "function", None)
+                    if function is not None:
+                        name = getattr(function, "name", None)
+                        arguments = getattr(function, "arguments", None)
+                        if name:
+                            call["function"]["name"] += name
+                        if arguments:
+                            call["function"]["arguments"] += arguments
+
+            return {
+                "content": "".join(content_parts),
+                "reasoning": "".join(reasoning_parts),
+                "tool_calls": [tool_calls[i] for i in sorted(tool_calls)],
+                "finish_reason": finish_reason,
+                "model": model,
+                "usage": usage,
+                "saw_choice": saw_choice,
+            }
 
         for round_num in range(_max_rounds):
             searches_left = None if max_searches is None else max(0, max_searches - stats["search_calls"])
@@ -201,7 +284,9 @@ class OpenAICompatibleAgent(BaseAgent):
                 create_kwargs = {
                     "model": self.model,
                     "messages": messages,
-                    self.max_tokens_param: MAX_TOKENS,
+                    self.max_tokens_param: ANSWER_MAX_TOKENS if searches_left == 0 else MAX_TOKENS,
+                    "stream": True,
+                    "stream_options": {"include_usage": True},
                 }
                 if searches_left == 0:
                     # Search budget exhausted — drop tools and explicitly instruct the
@@ -223,9 +308,16 @@ class OpenAICompatibleAgent(BaseAgent):
                 if self.extra_body:
                     create_kwargs["extra_body"] = self.extra_body
                 t_connect = time.perf_counter()
-                response = self.client.chat.completions.create(**create_kwargs)
-                if round_num == 0:
-                    stats["connect_ms"] = round((time.perf_counter() - t_connect) * 1000)
+                stream_chunks = consume_stream(
+                    self.client.chat.completions.create(**create_kwargs),
+                    round_num,
+                )
+                while True:
+                    try:
+                        yield next(stream_chunks)
+                    except StopIteration as stop:
+                        aggregate = stop.value
+                        break
             except Exception as e:
                 logger.error("API call failed (model=%s, round=%d): %s", self.model, round_num, e)
                 stats["answer"] = f"Error: {e}"
@@ -234,29 +326,42 @@ class OpenAICompatibleAgent(BaseAgent):
                 yield {"event": "done", "stats": stats}
                 return
 
-            if response.usage:
-                call_input = getattr(response.usage, "prompt_tokens", 0)
-                call_output = getattr(response.usage, "completion_tokens", 0)
+            if aggregate["usage"]:
+                call_input = getattr(aggregate["usage"], "prompt_tokens", 0)
+                call_output = getattr(aggregate["usage"], "completion_tokens", 0)
                 stats["token_breakdown"]["input"] += call_input
                 stats["token_breakdown"]["output"] += call_output
                 if round_num == 0:
                     baseline_input = call_input
             stats["api_calls"] += 1
             if round_num == 0:
-                stats["model_confirmed"] = getattr(response, "model", None)
+                stats["model_confirmed"] = aggregate["model"]
 
-            if not response.choices:
+            if not aggregate["saw_choice"]:
                 logger.error("API returned empty choices (model=%s, round=%d)", self.model, round_num)
                 break
-            choice = response.choices[0]
-            if choice.finish_reason != "tool_calls" or not choice.message.tool_calls:
+            if aggregate["finish_reason"] != "tool_calls" or not aggregate["tool_calls"]:
+                stats["answer"] = aggregate["content"] or aggregate["reasoning"] or ""
+                final_aggregate = aggregate
                 break
 
-            messages.append(choice.message)
+            messages.append({
+                "role": "assistant",
+                "content": aggregate["content"] or None,
+                "tool_calls": [
+                    {
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": tool_call["function"],
+                    }
+                    for tool_call in aggregate["tool_calls"]
+                ],
+            })
 
-            for tool_call in choice.message.tool_calls:
-                if tool_call.function.name != "web_search":
-                    logger.warning("LLM called unknown tool: %s", tool_call.function.name)
+            for tool_call in aggregate["tool_calls"]:
+                function = tool_call["function"]
+                if function["name"] != "web_search":
+                    logger.warning("LLM called unknown tool: %s", function["name"])
                     continue
 
                 if searches_left is not None and searches_left <= 0:
@@ -264,18 +369,18 @@ class OpenAICompatibleAgent(BaseAgent):
                     # but still answer each tool_call id so the message log stays valid.
                     messages.append({
                         "role": "tool",
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call["id"],
                         "content": "Search limit reached — answer using the information already gathered.",
                     })
                     continue
 
                 try:
-                    args = json.loads(tool_call.function.arguments)
+                    args = json.loads(function["arguments"])
                 except json.JSONDecodeError:
-                    logger.error("Malformed tool arguments (model=%s): %s", self.model, tool_call.function.arguments[:200])
+                    logger.error("Malformed tool arguments (model=%s): %s", self.model, function["arguments"][:200])
                     messages.append({
                         "role": "tool",
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call["id"],
                         "content": "Error: could not parse tool arguments",
                     })
                     continue
@@ -319,7 +424,7 @@ class OpenAICompatibleAgent(BaseAgent):
 
                 messages.append({
                     "role": "tool",
-                    "tool_call_id": tool_call.id,
+                    "tool_call_id": tool_call["id"],
                     "content": result,
                 })
         else:
@@ -329,27 +434,42 @@ class OpenAICompatibleAgent(BaseAgent):
                 synthesis_kwargs = {
                     "model": self.model,
                     "messages": messages + [{"role": "user", "content": "Based on all the search results above, please provide a comprehensive answer."}],
-                    self.max_tokens_param: MAX_TOKENS,
+                    self.max_tokens_param: ANSWER_MAX_TOKENS,
+                    "stream": True,
+                    "stream_options": {"include_usage": True},
                 }
                 if self.extra_body:
                     synthesis_kwargs["extra_body"] = self.extra_body
-                response = self.client.chat.completions.create(**synthesis_kwargs)
-                if response.usage:
-                    stats["token_breakdown"]["input"] += getattr(response.usage, "prompt_tokens", 0)
-                    stats["token_breakdown"]["output"] += getattr(response.usage, "completion_tokens", 0)
+                t_connect = time.perf_counter()
+                stream_chunks = consume_stream(
+                    self.client.chat.completions.create(**synthesis_kwargs),
+                    _max_rounds,
+                )
+                while True:
+                    try:
+                        yield next(stream_chunks)
+                    except StopIteration as stop:
+                        aggregate = stop.value
+                        break
+                if aggregate["usage"]:
+                    stats["token_breakdown"]["input"] += getattr(aggregate["usage"], "prompt_tokens", 0)
+                    stats["token_breakdown"]["output"] += getattr(aggregate["usage"], "completion_tokens", 0)
                 stats["api_calls"] += 1
+                if aggregate["model"] and stats["model_confirmed"] is None:
+                    stats["model_confirmed"] = aggregate["model"]
+                if aggregate["saw_choice"]:
+                    stats["answer"] = aggregate["content"] or aggregate["reasoning"] or ""
+                    final_aggregate = aggregate
             except Exception as e:
                 logger.error("Synthesis call failed (model=%s): %s", self.model, e)
 
-        if not response or not response.choices:
+        if final_aggregate is None or not final_aggregate["saw_choice"]:
             stats["answer"] = "Error: no response from model"
             stats["latency_ms"] = (time.perf_counter() - t0) * 1000
             yield {"event": "answer", "text": stats["answer"], "sources": []}
             yield {"event": "done", "stats": stats}
             return
 
-        message = response.choices[0].message
-        stats["answer"] = message.content or (message.model_extra or {}).get("reasoning", "") or ""
         total_in = stats["token_breakdown"]["input"]
         total_out = stats["token_breakdown"]["output"]
         stats["tokens_used"] = total_in + total_out
@@ -359,17 +479,5 @@ class OpenAICompatibleAgent(BaseAgent):
         )
         stats["latency_ms"] = (time.perf_counter() - t0) * 1000
 
-        # Reveal the final answer progressively so the UI updates as it fills in,
-        # but cap the number of updates so the client re-renders a bounded number
-        # of times regardless of answer length (avoids O(n^2) markdown re-rendering).
-        answer_text = stats["answer"]
-        words = re.findall(r"\S+\s*", answer_text)
-        if len(words) > 1:
-            max_updates = 24
-            step = max(1, (len(words) + max_updates - 1) // max_updates)
-            chars = 0
-            for i in range(0, len(words), step):
-                chars += sum(len(w) for w in words[i:i + step])
-                yield {"event": "answer", "text": answer_text[:chars], "sources": stats["sources"]}
-        yield {"event": "answer", "text": answer_text, "sources": stats["sources"]}
+        yield {"event": "answer", "text": stats["answer"], "sources": stats["sources"]}
         yield {"event": "done", "stats": stats}
