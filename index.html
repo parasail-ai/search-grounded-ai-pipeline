@@ -1198,34 +1198,6 @@
       </div>
     </div>
   </div>
-  <!-- Stats bar — below hero -->
-  <div class="chat-stats-bar" id="chat-stats-bar" style="display:none">
-    <div style="padding:12px 24px 0">
-    <div class="stats-strip" style="margin:0;max-width:860px;margin-left:auto;margin-right:auto">
-      <div class="stat-cell">
-        <div class="stat-cell-label">Turns</div>
-        <div class="stat-cell-value" id="cstat-turns">0</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">Tokens</div>
-        <div class="stat-cell-value" id="cstat-tokens">—</div>
-        <div class="token-breakdown" id="cstat-tok-breakdown" style="display:none">
-          <div class="token-chip"><span>in </span><span id="cstat-tok-in">—</span></div>
-          <div class="token-chip"><span>ctx </span><span id="cstat-tok-ctx">—</span></div>
-          <div class="token-chip"><span>out </span><span id="cstat-tok-out">—</span></div>
-        </div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">Searches</div>
-        <div class="stat-cell-value" id="cstat-searches">0</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">Cost</div>
-        <div class="stat-cell-value" id="cstat-cost">—</div>
-      </div>
-    </div>
-    </div>
-  </div>
   <div class="chat-thread" id="chat-thread">
   </div>
   <div class="chat-composer">
@@ -2741,25 +2713,12 @@ function updateChatStats(stats, costs, model, pricing) {
   _chatTotals.search     += costs?.search || 0;
   _chatTotals.livecrawl  += costs?.livecrawl_overage || 0;
 
-  const total = _chatTotals.input + _chatTotals.output;
-  document.getElementById('chat-stats-bar').style.display = '';
-  document.getElementById('cstat-turns').textContent   = _chatTotals.turns;
-  document.getElementById('cstat-tokens').textContent  = total.toLocaleString();
-  document.getElementById('cstat-searches').textContent = _chatTotals.searches;
-  const costEl = document.getElementById('cstat-cost');
-  costEl.innerHTML = `<span class="cost-clickable" onclick="showChatCostPopup(this)">${'$' + _chatTotals.cost.toFixed(5)}</span>`;
-  const bd = document.getElementById('cstat-tok-breakdown');
-  bd.style.display = 'flex';
-  document.getElementById('cstat-tok-in').textContent  = _chatTotals.input.toLocaleString();
-  document.getElementById('cstat-tok-ctx').textContent = _chatTotals.ctx.toLocaleString();
-  document.getElementById('cstat-tok-out').textContent = _chatTotals.output.toLocaleString();
 }
 
 function chatNew() {
   if (_chatAbort) { _chatAbort.abort(); _chatAbort = null; }
   _chatHistory = [];
   _chatTotals = { turns: 0, input: 0, ctx: 0, output: 0, searches: 0, cost: 0, llm: 0, search: 0, livecrawl: 0 };
-  document.getElementById('chat-stats-bar').style.display = 'none';
   const hero = document.getElementById('chat-hero');
   if (hero) hero.style.display = '';
   document.getElementById('chat-thread').innerHTML = '';
