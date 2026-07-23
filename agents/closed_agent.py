@@ -32,7 +32,10 @@ class ClosedModelAgent(OpenAICompatibleAgent):
             system_prompt=system_prompt,
             max_tokens_param="max_completion_tokens",
             # GPT-5.x rejects function tools on /v1/chat/completions unless
-            # reasoning_effort is 'none' (otherwise: use /v1/responses).
+            # reasoning_effort is 'none' (otherwise: use /v1/responses), so keep
+            # 'none' on tool-calling rounds...
             extra_body={"reasoning_effort": "none"},
+            # ...but let it reason on the final, tool-free answer round.
+            answer_extra_body={"reasoning_effort": "medium"},
             force_search_first=True,
         )

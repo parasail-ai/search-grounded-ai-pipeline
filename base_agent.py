@@ -173,12 +173,18 @@ class OpenAICompatibleAgent(BaseAgent):
         system_prompt: str = None,
         max_tokens_param: str = "max_tokens",
         extra_body: dict | None = None,
+        answer_extra_body: dict | None = None,
         force_search_first: bool = False,
     ):
         super().__init__(model, system_prompt)
         self.client = client
         self.max_tokens_param = max_tokens_param
         self.extra_body = extra_body
+        # Used only on tool-free rounds (final answer / synthesis). Lets a model
+        # run with reasoning_effort on the answer while keeping extra_body (e.g.
+        # reasoning_effort="none") on tool-calling rounds, since some endpoints
+        # reject function tools when reasoning_effort != "none".
+        self.answer_extra_body = answer_extra_body
         self.force_search_first = force_search_first
 
     def stream(self, question: str, max_rounds: int = None, prior_messages: list = None, max_searches: int = None) -> Generator[dict, None, None]:
@@ -305,8 +311,15 @@ class OpenAICompatibleAgent(BaseAgent):
                     create_kwargs["tools"] = [TOOL_SCHEMA]
                     if self.force_search_first and round_num == 0:
                         create_kwargs["tool_choice"] = "required"
-                if self.extra_body:
-                    create_kwargs["extra_body"] = self.extra_body
+                # Tool-free (answer) rounds may use a distinct extra_body so a
+                # model can reason on the final answer even when tools + that
+                # setting can't coexist on tool-calling rounds.
+                if "tools" not in create_kwargs and self.answer_extra_body is not None:
+                    active_extra_body = self.answer_extra_body
+                else:
+                    active_extra_body = self.extra_body
+                if active_extra_body:
+                    create_kwargs["extra_body"] = active_extra_body
                 t_connect = time.perf_counter()
                 stream_chunks = consume_stream(
                     self.client.chat.completions.create(**create_kwargs),
@@ -438,8 +451,13 @@ class OpenAICompatibleAgent(BaseAgent):
                     "stream": True,
                     "stream_options": {"include_usage": True},
                 }
-                if self.extra_body:
-                    synthesis_kwargs["extra_body"] = self.extra_body
+                synthesis_extra_body = (
+                    self.answer_extra_body
+                    if self.answer_extra_body is not None
+                    else self.extra_body
+                )
+                if synthesis_extra_body:
+                    synthesis_kwargs["extra_body"] = synthesis_extra_body
                 t_connect = time.perf_counter()
                 stream_chunks = consume_stream(
                     self.client.chat.completions.create(**synthesis_kwargs),
