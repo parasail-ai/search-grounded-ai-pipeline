@@ -1088,6 +1088,52 @@
   .jt-bracket { color: #666; }
   .jt-count { font-size: 10px; color: var(--muted); margin-left: 4px; }
   .jt-preview { color: var(--muted); font-size: 10.5px; margin-left: 4px; }
+
+  /* ─── Mobile / narrow viewports ──────────────────────────────────── */
+  @media (max-width: 640px) {
+    .header { padding-top: 14px; }
+    .header-inner, .input-bar-inner, .chat-composer-inner,
+    .results, .pipeline-form-wrap, .about-content,
+    .chat-thread, .pipeline-hero-inner {
+      padding-left: 16px; padding-right: 16px;
+    }
+    .header h1 { font-size: 17px; }
+    .header .subtitle {
+      font-size: 12px; margin-top: 6px;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .tab-bar { gap: 2px; overflow-x: auto; margin-top: 14px; }
+    .tab-btn { padding: 8px 13px; font-size: 12px; white-space: nowrap; }
+
+    /* Input bars: stack into a usable mobile layout instead of one
+       overflowing row */
+    .input-bar-inner, .chat-composer-inner { flex-wrap: wrap; gap: 10px; }
+    .input-bar-inner select,
+    .chat-composer-inner select { flex: 1 1 100%; width: 100%; min-width: 0; }
+    .input-bar-inner input[type="text"],
+    .chat-composer-inner input[type="text"] { flex: 1 1 100%; width: 100%; }
+    .input-bar-inner > button,
+    .chat-composer-inner > button { flex: 1 1 auto; }
+    .lc-toggle, .compare-toggle, .searches-cap { flex: 0 0 auto; }
+
+    /* Stats strip: 2-column grid rather than a cramped single row */
+    .stats-strip { display: grid; grid-template-columns: 1fr 1fr; }
+    .stat-cell { border-right: 1px solid var(--border-lt);
+      border-bottom: 1px solid var(--border-lt); }
+    .stat-cell:nth-child(2n) { border-right: none; }
+    .stat-cell-value { font-size: 18px; }
+
+    .chat-bubble-user { max-width: 85%; }
+    .results { padding-top: 20px; padding-bottom: 20px; }
+
+    /* Chat panel height accounts for the taller mobile header/composer */
+    .tab-panel.chat-layout { height: calc(100dvh - 118px); }
+
+    /* Pipeline hero + form stack vertically */
+    .pipeline-hero-inner { flex-direction: column; gap: 16px; }
+    .pipeline-form { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
