@@ -93,8 +93,12 @@
   }
   .input-bar-inner {
     max-width: 860px; margin: 0 auto; padding: 0 24px;
-    display: flex; gap: 12px; align-items: center;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
   }
+  /* Forces the question field + Search button onto their own full-width row
+     so long prompts are fully visible instead of clipped. */
+  .ib-break { flex-basis: 100%; height: 0; margin: 0; }
+  .input-bar-inner #question { flex: 1 1 320px; min-width: 240px; }
   .input-bar select {
     background: #fff; color: var(--text);
     border: 1px solid var(--border-mid); border-radius: 8px;
@@ -1218,6 +1222,7 @@
         <span>Searches</span>
         <input type="number" id="ask-max-searches" min="1" max="10" step="1" value="1">
       </label>
+      <div class="ib-break"></div>
       <input type="text" id="question" placeholder="Ask anything that needs current info…" autocomplete="off">
       <button id="ask-btn" onclick="ask()">Search →</button>
       <button id="stop-btn" onclick="stopQuery()" style="display:none">Stop ▪</button>
@@ -1834,6 +1839,10 @@ client = OpenAI(
 let _lastDoneEvent = null;
 let _abortCtrl = null;
 
+// Default Grounded Inference prompt: open-ended + current, so it needs live
+// search AND rewards the model's judgment (not a single deterministic fact).
+const EXAMPLE_PROMPT = 'What were the biggest AI model launches this month, and which one matters most?';
+
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
@@ -1843,7 +1852,9 @@ function switchTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'about') loadConfig();
   if (name === 'ask' && !document.getElementById('question').value) {
-    document.getElementById('question').value = 'Who won the 2026 FIFA World Cup semifinals and who are the finalists?';
+    const q = document.getElementById('question');
+    q.value = EXAMPLE_PROMPT;
+    q.title = q.value;
   }
 }
 
@@ -3719,9 +3730,13 @@ async function loadSource() {
 document.addEventListener('DOMContentLoaded', () => {
   loadModels();
   loadSource();
-  // Ask tab is default — pre-fill with a question designed to show the search toggle demo
-  document.getElementById('question').value = 'Who won the 2026 FIFA World Cup semifinals and who are the finalists?';
-  document.getElementById('question').addEventListener('keydown', e => {
+  // Ask tab is default — pre-fill with an open-ended, current question that
+  // rewards reasoning (not a single-fact lookup) to show off the model.
+  const _q = document.getElementById('question');
+  _q.value = EXAMPLE_PROMPT;
+  _q.title = _q.value;
+  _q.addEventListener('input', () => { _q.title = _q.value; });
+  _q.addEventListener('keydown', e => {
     if (e.key === 'Enter') ask();
   });
   document.getElementById('chat-input').addEventListener('keydown', e => {
