@@ -13,6 +13,7 @@ Endpoints:
 
 import json
 import os
+import queue
 import sys
 import time
 import threading
@@ -442,8 +443,6 @@ class Handler(SimpleHTTPRequestHandler):
         self._cors_headers()
         self.end_headers()
 
-        open_stats = None
-        closed_stats = None
         try:
             self._send_event({
                 "event": "compare_init",
@@ -452,149 +451,205 @@ class Handler(SimpleHTTPRequestHandler):
                 "closed_model": closed_cfg["model_id"],
                 "closed_display_name": closed_cfg["display_name"],
             })
-            open_error = None
-            for attempt in range(2):
-                try:
-                    open_agent = ParasailAgent(model=open_cfg["model_id"])
-                    for event in open_agent.stream(question, max_rounds=None if search_enabled else 0, prior_messages=prior_messages):
-                        if event.get("event") == "done":
-                            open_stats = event.get("stats", {})
-                            event["costs"] = _event_costs(open_stats, open_cfg["pricing"])
-                            event["token_breakdown"] = open_stats.get("token_breakdown", {})
-                            event["pricing"] = _event_pricing(open_cfg["pricing"])
-                        event["side"] = "open"
-                        self._send_event(event)
-                    open_answer = str((open_stats or {}).get("answer", ""))
-                    if open_answer.startswith("Error:") and _is_parasail_overload(open_answer) and attempt == 0:
-                        logger.warning("429 from Parasail compare open run — retrying in %ds", RETRY_DELAY_S)
-                        self._send_event({
-                            "event": "retrying",
-                            "side": "open",
-                            "message": f"Parasail is busy — retrying in {RETRY_DELAY_S}s…",
-                            "after_s": RETRY_DELAY_S,
-                        })
-                        open_stats = None
-                        time.sleep(RETRY_DELAY_S)
-                        continue
-                    break
-                except BrokenPipeError:
-                    raise
-                except Exception as exc:
-                    if _is_parasail_overload(exc) and attempt == 0:
-                        logger.warning("429 from Parasail compare open run — retrying in %ds", RETRY_DELAY_S)
-                        self._send_event({
-                            "event": "retrying",
-                            "side": "open",
-                            "message": f"Parasail is busy — retrying in {RETRY_DELAY_S}s…",
-                            "after_s": RETRY_DELAY_S,
-                        })
-                        time.sleep(RETRY_DELAY_S)
-                        continue
-                    open_error = exc
-                    break
+            events = queue.Queue()
+            open_ready = threading.Event()
+            state = {
+                "open_stats": None,
+                "open_error": None,
+                "closed_stats": None,
+                "closed_source": None,
+                "closed_error": None,
+            }
 
-            open_answer = str((open_stats or {}).get("answer", ""))
-            if open_error or open_stats is None or open_answer.startswith("Error:"):
+            def open_worker():
+                open_stats = None
+                open_error = None
+                try:
+                    for attempt in range(2):
+                        try:
+                            open_agent = ParasailAgent(model=open_cfg["model_id"])
+                            for event in open_agent.stream(
+                                question,
+                                max_rounds=None if search_enabled else 0,
+                                prior_messages=prior_messages,
+                            ):
+                                if event.get("event") == "done":
+                                    open_stats = event.get("stats", {})
+                                    event["costs"] = _event_costs(open_stats, open_cfg["pricing"])
+                                    event["token_breakdown"] = open_stats.get("token_breakdown", {})
+                                    event["pricing"] = _event_pricing(open_cfg["pricing"])
+                                event["side"] = "open"
+                                events.put(event)
+                            open_answer = str((open_stats or {}).get("answer", ""))
+                            if open_answer.startswith("Error:") and _is_parasail_overload(open_answer) and attempt == 0:
+                                logger.warning("429 from Parasail compare open run — retrying in %ds", RETRY_DELAY_S)
+                                events.put({
+                                    "event": "retrying",
+                                    "side": "open",
+                                    "message": f"Parasail is busy — retrying in {RETRY_DELAY_S}s…",
+                                    "after_s": RETRY_DELAY_S,
+                                })
+                                open_stats = None
+                                time.sleep(RETRY_DELAY_S)
+                                continue
+                            break
+                        except Exception as exc:
+                            if _is_parasail_overload(exc) and attempt == 0:
+                                logger.warning("429 from Parasail compare open run — retrying in %ds", RETRY_DELAY_S)
+                                events.put({
+                                    "event": "retrying",
+                                    "side": "open",
+                                    "message": f"Parasail is busy — retrying in {RETRY_DELAY_S}s…",
+                                    "after_s": RETRY_DELAY_S,
+                                })
+                                time.sleep(RETRY_DELAY_S)
+                                continue
+                            open_error = exc
+                            break
+                except Exception as exc:
+                    open_error = exc
+                finally:
+                    state["open_stats"] = open_stats
+                    state["open_error"] = open_error
+                    open_ready.set()
+                    events.put(("worker_done", "open"))
+
+            def closed_worker():
+                closed_stats = None
+                closed_source = None
+                try:
+                    cache_key = _cache_key(question, closed_cfg["model_id"], search_enabled)
+                    cached = None if skip_cache else _closed_cache_get(cache_key)
+                    if cached:
+                        closed_stats = cached["stats"]
+                        closed_source = "cached"
+                        events.put({
+                            "event": "answer",
+                            "side": "closed",
+                            "text": closed_stats.get("answer", ""),
+                            "sources": closed_stats.get("sources", []),
+                        })
+                        events.put({
+                            "event": "done",
+                            "side": "closed",
+                            "stats": closed_stats,
+                            "costs": cached["costs"],
+                            "token_breakdown": closed_stats.get("token_breakdown", {}),
+                            "pricing": _event_pricing(closed_cfg["pricing"]),
+                        })
+                    elif os.getenv("ALLOW_LIVE_CLOSED", "true").lower() != "false" and os.environ.get("OPENAI_API_KEY"):
+                        closed_agent = ClosedModelAgent(model=closed_cfg["model_id"])
+                        live_error = None
+                        try:
+                            for event in closed_agent.stream(
+                                question,
+                                max_rounds=None if search_enabled else 0,
+                                prior_messages=prior_messages,
+                            ):
+                                if event.get("event") == "done":
+                                    closed_stats = event.get("stats", {})
+                                    if str(closed_stats.get("answer", "")).startswith("Error:"):
+                                        live_error = RuntimeError(closed_stats["answer"])
+                                        continue
+                                    event["costs"] = _event_costs(closed_stats, closed_cfg["pricing"])
+                                    event["token_breakdown"] = closed_stats.get("token_breakdown", {})
+                                    event["pricing"] = _event_pricing(closed_cfg["pricing"])
+                                elif event.get("event") == "answer" and str(event.get("text", "")).startswith("Error:"):
+                                    live_error = RuntimeError(event["text"])
+                                    continue
+                                event["side"] = "closed"
+                                if live_error is None:
+                                    events.put(event)
+                        except Exception as exc:
+                            live_error = exc
+
+                        has_live_answer = (
+                            closed_stats is not None
+                            and not str(closed_stats.get("answer", "")).startswith("Error:")
+                        )
+                        if has_live_answer and live_error is None:
+                            closed_source = "live"
+                            if not skip_cache:
+                                _closed_cache_put(cache_key, {
+                                    "stats": closed_stats,
+                                    "costs": _event_costs(closed_stats, closed_cfg["pricing"]),
+                                })
+                        else:
+                            if live_error:
+                                logger.warning("closed model failed; using projected fallback: %s", live_error)
+                            else:
+                                logger.warning("closed model returned an error; using projected fallback")
+                            live_error = live_error or RuntimeError("closed model returned an error")
+                            closed_source = "projected"
+                            open_ready.wait()
+                            if state["open_stats"] is not None:
+                                closed_stats = _projected_closed_stats(state["open_stats"], closed_cfg)
+                    else:
+                        closed_source = "projected"
+                        open_ready.wait()
+                        if state["open_stats"] is not None:
+                            closed_stats = _projected_closed_stats(state["open_stats"], closed_cfg)
+
+                    if closed_source == "projected" and closed_stats is not None:
+                        closed_costs = _event_costs(closed_stats, closed_cfg["pricing"])
+                        events.put({
+                            "event": "answer",
+                            "side": "closed",
+                            "text": closed_stats["answer"],
+                            "sources": [],
+                        })
+                        events.put({
+                            "event": "done",
+                            "side": "closed",
+                            "stats": closed_stats,
+                            "costs": closed_costs,
+                            "token_breakdown": closed_stats["token_breakdown"],
+                            "pricing": _event_pricing(closed_cfg["pricing"]),
+                        })
+                except Exception as exc:
+                    state["closed_error"] = exc
+                finally:
+                    state["closed_stats"] = closed_stats
+                    state["closed_source"] = closed_source
+                    events.put(("worker_done", "closed"))
+
+            open_thread = threading.Thread(target=open_worker, name="compare-open")
+            closed_thread = threading.Thread(target=closed_worker, name="compare-closed")
+            open_thread.start()
+            closed_thread.start()
+            finished = 0
+            try:
+                while finished < 2:
+                    event = events.get()
+                    if isinstance(event, tuple) and event[0] == "worker_done":
+                        finished += 1
+                    else:
+                        self._send_event(event)
+            finally:
+                open_thread.join()
+                closed_thread.join()
+
+            open_stats = state["open_stats"]
+            closed_stats = state["closed_stats"]
+            open_error = state["open_error"]
+            closed_source = state["closed_source"]
+            if open_error or open_stats is None or str(open_stats.get("answer", "")).startswith("Error:"):
                 if open_error:
                     logger.error("compare open run failed: %s", open_error, exc_info=True)
                 else:
+                    open_answer = str(open_stats.get("answer", "") if open_stats else "")
                     logger.error("compare open run returned an error: %s", open_answer)
+                open_answer = str(open_stats.get("answer", "") if open_stats else "")
                 if _is_parasail_overload(open_error or open_answer):
                     user_msg = "Parasail is busy right now. Please try again in a few moments."
                 else:
                     user_msg = str(open_error or open_answer or "Open model returned no response")
                 self._send_event({"event": "error", "message": user_msg})
                 return
-
-            cache_key = _cache_key(question, closed_cfg["model_id"], search_enabled)
-            cached = None if skip_cache else _closed_cache_get(cache_key)
-            closed_source = "cached" if cached else None
-            if cached:
-                closed_stats = cached["stats"]
-                self._send_event({
-                    "event": "answer",
-                    "side": "closed",
-                    "text": closed_stats.get("answer", ""),
-                    "sources": closed_stats.get("sources", []),
-                })
-                self._send_event({
-                    "event": "done",
-                    "side": "closed",
-                    "stats": closed_stats,
-                    "costs": cached["costs"],
-                    "token_breakdown": closed_stats.get("token_breakdown", {}),
-                    "pricing": _event_pricing(closed_cfg["pricing"]),
-                })
-            elif os.getenv("ALLOW_LIVE_CLOSED", "true").lower() != "false" and os.environ.get("OPENAI_API_KEY"):
-                closed_agent = ClosedModelAgent(model=closed_cfg["model_id"])
-                live_events = []
-                live_error = None
-                try:
-                    for event in closed_agent.stream(question, max_rounds=None if search_enabled else 0, prior_messages=prior_messages):
-                        if event.get("event") == "done":
-                            closed_stats = event.get("stats", {})
-                        event["side"] = "closed"
-                        live_events.append(event)
-                except Exception as exc:
-                    live_error = exc
-
-                has_live_answer = (
-                    closed_stats is not None
-                    and not str(closed_stats.get("answer", "")).startswith("Error:")
-                )
-                if has_live_answer and live_error is None:
-                    closed_source = "live"
-                    for event in live_events:
-                        if event.get("event") == "done":
-                            event["costs"] = _event_costs(closed_stats, closed_cfg["pricing"])
-                            event["token_breakdown"] = closed_stats.get("token_breakdown", {})
-                            event["pricing"] = _event_pricing(closed_cfg["pricing"])
-                        self._send_event(event)
-                    if not skip_cache:
-                        _closed_cache_put(cache_key, {
-                            "stats": closed_stats,
-                            "costs": _event_costs(closed_stats, closed_cfg["pricing"]),
-                        })
-                else:
-                    if live_error:
-                        logger.warning("closed model failed; using projected fallback: %s", live_error)
-                    else:
-                        logger.warning("closed model returned an error; using projected fallback")
-                    closed_source = "projected"
-                    closed_stats = _projected_closed_stats(open_stats, closed_cfg)
-                    closed_costs = _event_costs(closed_stats, closed_cfg["pricing"])
-                    self._send_event({
-                        "event": "answer",
-                        "side": "closed",
-                        "text": closed_stats["answer"],
-                        "sources": [],
-                    })
-                    self._send_event({
-                        "event": "done",
-                        "side": "closed",
-                        "stats": closed_stats,
-                        "costs": closed_costs,
-                        "token_breakdown": closed_stats["token_breakdown"],
-                        "pricing": _event_pricing(closed_cfg["pricing"]),
-                    })
-            else:
-                closed_source = "projected"
-                closed_stats = _projected_closed_stats(open_stats, closed_cfg)
-                closed_costs = _event_costs(closed_stats, closed_cfg["pricing"])
-                self._send_event({
-                    "event": "answer",
-                    "side": "closed",
-                    "text": closed_stats["answer"],
-                    "sources": [],
-                })
-                self._send_event({
-                    "event": "done",
-                    "side": "closed",
-                    "stats": closed_stats,
-                    "costs": closed_costs,
-                    "token_breakdown": closed_stats["token_breakdown"],
-                    "pricing": _event_pricing(closed_cfg["pricing"]),
-                })
+            if state["closed_error"]:
+                raise state["closed_error"]
+            if closed_stats is None:
+                raise RuntimeError("closed model returned no stats")
 
             open_costs = _event_costs(open_stats, open_cfg["pricing"])
             closed_costs = _event_costs(closed_stats, closed_cfg["pricing"])
