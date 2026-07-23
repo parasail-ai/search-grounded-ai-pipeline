@@ -43,6 +43,19 @@ from costs import calculate_costs, format_cost, YDC_SEARCH_COST_PER_CALL
 
 RETRY_DELAY_S = 5          # seconds to wait before one 429 retry
 MAX_REQUEST_BODY = 512_000  # 512 KB — sufficient for any question/brief payload
+DEFAULT_MAX_SEARCHES = 1   # searches per query; override via request "max_searches"
+
+
+def _parse_max_searches(body: dict) -> int | None:
+    """Read the per-query search cap from a request body. None = unlimited."""
+    raw = body.get("max_searches", DEFAULT_MAX_SEARCHES)
+    if raw is None:
+        return None
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_MAX_SEARCHES
+    return None if val <= 0 else val
 
 APP_DIR = Path(__file__).parent
 PORT = int(os.getenv("PORT", "8091"))
@@ -229,8 +242,9 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json({"error": "question required"}, 400)
                 return
             search_enabled = body.get("search_enabled", True)
+            max_searches = _parse_max_searches(body)
             logger.info("ask  model=%s search=%s q=%r", model_key, search_enabled, question[:80])
-            self._sse_ask(model_key, question, search_enabled=search_enabled)
+            self._sse_ask(model_key, question, search_enabled=search_enabled, max_searches=max_searches)
         elif self.path == "/api/chat":
             body = self._read_body()
             if body is None:
@@ -239,11 +253,12 @@ class Handler(SimpleHTTPRequestHandler):
             question = body.get("question", "").strip()
             prior_messages = body.get("prior_messages", [])
             search_enabled = body.get("search_enabled", True)
+            max_searches = _parse_max_searches(body)
             if not question:
                 self._json({"error": "question required"}, 400)
                 return
             logger.info("chat model=%s search=%s turns=%d q=%r", model_key, search_enabled, len(prior_messages)//2, question[:80])
-            self._sse_ask(model_key, question, prior_messages=prior_messages, search_enabled=search_enabled)
+            self._sse_ask(model_key, question, prior_messages=prior_messages, search_enabled=search_enabled, max_searches=max_searches)
         elif self.path == "/api/compare":
             body = self._read_body()
             if body is None:
@@ -257,7 +272,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             skip_cache = bool(body.get("skip_cache") or body.get("no_cache"))
             prior_messages = body.get("prior_messages") or []
-            self._sse_compare(model_key, question, search_enabled, closed_key, skip_cache=skip_cache, prior_messages=prior_messages)
+            max_searches = _parse_max_searches(body)
+            self._sse_compare(model_key, question, search_enabled, closed_key, skip_cache=skip_cache, prior_messages=prior_messages, max_searches=max_searches)
         elif self.path == "/api/pipeline/enrich":
             body = self._read_body()
             if body is None:
@@ -340,7 +356,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(line.encode())
         self.wfile.flush()
 
-    def _sse_ask(self, model_key: str, question: str, prior_messages: list = None, search_enabled: bool = True):
+    def _sse_ask(self, model_key: str, question: str, prior_messages: list = None, search_enabled: bool = True, max_searches: int = None):
         model_cfg = MODELS.get(model_key)
         if not model_cfg:
             self._json({"error": f"unknown model: {model_key}"}, 400)
@@ -363,7 +379,7 @@ class Handler(SimpleHTTPRequestHandler):
         for attempt in range(2):
             try:
                 agent = ParasailAgent(model=model_id)
-                for event in agent.stream(question, prior_messages=prior_messages or []):
+                for event in agent.stream(question, prior_messages=prior_messages or [], max_searches=max_searches):
                     if event.get("event") == "done":
                         stats = event.get("stats", {})
                         costs = calculate_costs(stats, model_cfg["pricing"])
@@ -426,7 +442,7 @@ class Handler(SimpleHTTPRequestHandler):
                     pass
                 break
 
-    def _sse_compare(self, model_key: str, question: str, search_enabled: bool, closed_key: str, skip_cache: bool = False, prior_messages: list = None):
+    def _sse_compare(self, model_key: str, question: str, search_enabled: bool, closed_key: str, skip_cache: bool = False, prior_messages: list = None, max_searches: int = None):
         open_cfg = MODELS.get(model_key)
         closed_cfg = CLOSED_MODELS.get(closed_key)
         if not open_cfg:
@@ -472,6 +488,7 @@ class Handler(SimpleHTTPRequestHandler):
                                 question,
                                 max_rounds=None if search_enabled else 0,
                                 prior_messages=prior_messages,
+                                max_searches=max_searches,
                             ):
                                 if event.get("event") == "done":
                                     open_stats = event.get("stats", {})
@@ -545,6 +562,7 @@ class Handler(SimpleHTTPRequestHandler):
                                 question,
                                 max_rounds=None if search_enabled else 0,
                                 prior_messages=prior_messages,
+                                max_searches=max_searches,
                             ):
                                 if event.get("event") == "done":
                                     closed_stats = event.get("stats", {})

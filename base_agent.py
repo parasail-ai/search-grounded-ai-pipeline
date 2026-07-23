@@ -181,7 +181,7 @@ class OpenAICompatibleAgent(BaseAgent):
         self.extra_body = extra_body
         self.force_search_first = force_search_first
 
-    def stream(self, question: str, max_rounds: int = None, prior_messages: list = None) -> Generator[dict, None, None]:
+    def stream(self, question: str, max_rounds: int = None, prior_messages: list = None, max_searches: int = None) -> Generator[dict, None, None]:
         stats = _empty_stats(self.model)
         messages = [
             {"role": "system", "content": self.system_prompt},
@@ -195,6 +195,7 @@ class OpenAICompatibleAgent(BaseAgent):
         response = None
 
         for round_num in range(_max_rounds):
+            searches_left = None if max_searches is None else max(0, max_searches - stats["search_calls"])
             try:
                 create_kwargs = {
                     "model": self.model,
@@ -202,8 +203,11 @@ class OpenAICompatibleAgent(BaseAgent):
                     "tools": [TOOL_SCHEMA],
                     self.max_tokens_param: MAX_TOKENS,
                 }
-                if self.force_search_first:
-                    create_kwargs["tool_choice"] = "required" if round_num == 0 else "auto"
+                if self.force_search_first and round_num == 0:
+                    create_kwargs["tool_choice"] = "required"
+                elif searches_left == 0:
+                    # Search budget exhausted — force the model to answer from what it has.
+                    create_kwargs["tool_choice"] = "none"
                 if self.extra_body:
                     create_kwargs["extra_body"] = self.extra_body
                 t_connect = time.perf_counter()
@@ -243,6 +247,16 @@ class OpenAICompatibleAgent(BaseAgent):
                     logger.warning("LLM called unknown tool: %s", tool_call.function.name)
                     continue
 
+                if searches_left is not None and searches_left <= 0:
+                    # Over the search budget for this request — decline extra calls
+                    # but still answer each tool_call id so the message log stays valid.
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": "Search limit reached — answer using the information already gathered.",
+                    })
+                    continue
+
                 try:
                     args = json.loads(tool_call.function.arguments)
                 except json.JSONDecodeError:
@@ -275,6 +289,8 @@ class OpenAICompatibleAgent(BaseAgent):
                 if uuid:
                     stats["search_uuid"] = uuid
                 stats["search_calls"] += 1
+                if searches_left is not None:
+                    searches_left -= 1
 
                 if is_verbose():
                     print(format_tool_log(entry))
