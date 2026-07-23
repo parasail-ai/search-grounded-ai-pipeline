@@ -54,6 +54,13 @@ MODELS = {
         "pricing": {"input": 0.75, "output": 3.50, "cache_read": 0.16},
         "slug_confirmed": True,
     },
+    "kimi-k2.6": {
+        "model_id": "moonshotai/Kimi-K2.6",
+        "display_name": "Kimi K2.6",
+        "provider": "Moonshot AI",
+        "pricing": {"input": 0.75, "output": 3.50, "cache_read": 0.16},
+        "slug_confirmed": True,
+    },
 
     # ── DeepSeek ──────────────────────────────────────────────────────────────
     "deepseek-v4-pro": {
